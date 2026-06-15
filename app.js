@@ -14,39 +14,44 @@ const rememberCheckbox = document.getElementById('rememberCheckbox');
 
 // ========== FUNCIONES DE LOGIN ==========
 
-// Mostrar/ocultar contraseña
-const togglePassword = document.getElementById('togglePassword');
-const passwordInput = document.getElementById('password');
-
-if (togglePassword && passwordInput) {
-    togglePassword.addEventListener('click', function() {
-        // Cambiar el tipo de input entre password y text
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
-        
-        // Cambiar el ícono (opcional: ojo tachado)
-        this.textContent = type === 'password' ? '👁️' : '🙈';
-    });
-}
-
+// Mostrar/ocultar contraseña - Versión mejorada
+document.addEventListener('DOMContentLoaded', function() {
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+    
+    if (togglePassword && passwordInput) {
+        console.log('Botón ojo encontrado');
+        togglePassword.addEventListener('click', function(e) {
+            e.preventDefault();
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.textContent = type === 'password' ? '👁️' : '🙈';
+            console.log('Cambiando tipo a:', type);
+        });
+    } else {
+        console.log('Botón ojo NO encontrado');
+    }
+});
 // Cargar lista de usuarios desde el backend
+// Cache de usuarios para evitar múltiples llamadas
+let usuariosCache = null;
+
 async function cargarUsuarios() {
+    // Si ya tenemos los usuarios en caché, usarlos
+    if (usuariosCache) {
+        console.log('Usando caché de usuarios');
+        llenarSelectUsuarios(usuariosCache);
+        return;
+    }
+    
     try {
-        // Endpoint público (no requiere token)
+        console.log('Cargando usuarios desde el servidor...');
         const response = await fetch(`${API_URL}/usuarios/public`);
         
         if (response.ok) {
             const usuarios = await response.json();
-            usuariosLista = usuarios;
-            
-            // Llenar el select
-            usuarioSelect.innerHTML = '<option value="">-- Seleccionar usuario --</option>';
-            usuarios.forEach(user => {
-                const option = document.createElement('option');
-                option.value = user.email;
-                option.textContent = `${user.nombre} (${user.email})`;
-                usuarioSelect.appendChild(option);
-            });
+            usuariosCache = usuarios; // Guardar en caché
+            llenarSelectUsuarios(usuarios);
         } else {
             console.error('Error cargando usuarios:', response.status);
             usuarioSelect.innerHTML = '<option value="">-- Error cargando usuarios --</option>';
@@ -57,6 +62,15 @@ async function cargarUsuarios() {
     }
 }
 
+function llenarSelectUsuarios(usuarios) {
+    usuarioSelect.innerHTML = '<option value="">-- Seleccionar usuario --</option>';
+    usuarios.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user.email;
+        option.textContent = `${user.nombre} (${user.email})`;
+        usuarioSelect.appendChild(option);
+    });
+}
 // Recordar usuario
 function guardarUsuarioRecordado(email) {
     if (rememberCheckbox.checked) {
