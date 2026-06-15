@@ -285,3 +285,7 @@ if (document.getElementById('pagarBtn')) {
 if (document.getElementById('logoutBtn')) {
     document.getElementById('logoutBtn').addEventListener('click', logout);
 }
+// Cargar usuarios al iniciar la página (solo en login)
+if (document.getElementById('usuarioSelect')) {
+    cargarUsuarios();
+}
