@@ -13,13 +13,25 @@
             <h2>Iniciar Sesión</h2>
             
             <div class="input-group">
-                <label>Email</label>
-                <input type="email" id="email" value="admin@lumire.com">
+                <label>Seleccionar Usuario</label>
+                <select id="usuarioSelect">
+                    <option value="">-- Cargando usuarios... --</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label>Email (o selecciona arriba)</label>
+                <input type="email" id="email" placeholder="correo@ejemplo.com">
             </div>
             
             <div class="input-group">
                 <label>Contraseña</label>
-                <input type="password" id="password" value="admin123">
+                <input type="password" id="password" placeholder="Ingresa tu contraseña">
+            </div>
+            
+            <div class="input-group checkbox-group">
+                <input type="checkbox" id="rememberCheckbox">
+                <label for="rememberCheckbox">Recordar usuario</label>
             </div>
             
             <button id="loginBtn">Ingresar</button>

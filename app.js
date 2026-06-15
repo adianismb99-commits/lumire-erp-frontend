@@ -2,44 +2,128 @@
 const API_URL = 'https://lumire-erp-docker.onrender.com/api';
 let token = null;
 let productos = [];
+let usuariosLista = [];
 
 // Elementos del DOM
 const loginBtn = document.getElementById('loginBtn');
 const errorMsg = document.getElementById('errorMsg');
+const emailInput = document.getElementById('email');
+const passwordInput = document.getElementById('password');
+const usuarioSelect = document.getElementById('usuarioSelect');
+const rememberCheckbox = document.getElementById('rememberCheckbox');
+
+// ========== FUNCIONES DE LOGIN ==========
+
+// Cargar lista de usuarios desde el backend
+async function cargarUsuarios() {
+    const tokenGuardado = localStorage.getItem('token');
+    if (!tokenGuardado) return;
+    
+    try {
+        const response = await fetch(`${API_URL}/usuarios/`, {
+            headers: { 'Authorization': `Bearer ${tokenGuardado}` }
+        });
+        
+        if (response.ok) {
+            const usuarios = await response.json();
+            usuariosLista = usuarios;
+            
+            // Llenar el select
+            usuarioSelect.innerHTML = '<option value="">-- Seleccionar usuario --</option>';
+            usuarios.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.email;
+                option.textContent = `${user.nombre} (${user.email})`;
+                usuarioSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error cargando usuarios:', error);
+    }
+}
+
+// Recordar usuario
+function guardarUsuarioRecordado(email) {
+    if (rememberCheckbox.checked) {
+        localStorage.setItem('recordarUsuario', email);
+    } else {
+        localStorage.removeItem('recordarUsuario');
+    }
+}
+
+function cargarUsuarioRecordado() {
+    const emailRecordado = localStorage.getItem('recordarUsuario');
+    if (emailRecordado) {
+        emailInput.value = emailRecordado;
+        rememberCheckbox.checked = true;
+        // Opcional: enfocar contraseña
+        passwordInput.focus();
+    }
+}
 
 // Login
+async function hacerLogin(email, password) {
+    try {
+        const response = await fetch(`${API_URL}/login`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            token = data.access_token;
+            localStorage.setItem('token', token);
+            guardarUsuarioRecordado(email);
+            window.location.href = 'dashboard.html';
+        } else {
+            errorMsg.textContent = data.detail || 'Error de login';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        errorMsg.textContent = 'Error de conexión: ' + error.message;
+    }
+}
+
+// Evento del botón login
 if (loginBtn) {
     loginBtn.addEventListener('click', async () => {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
         
-        try {
-            const response = await fetch(`${API_URL}/login`, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ email, password })
-            });
-            
-            const data = await response.json();
-            
-            if (response.ok) {
-                token = data.access_token;
-                localStorage.setItem('token', token);
-                window.location.href = 'dashboard.html';
-            } else {
-                errorMsg.textContent = data.detail || 'Error de login';
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            errorMsg.textContent = 'Error de conexión: ' + error.message;
+        if (!email || !password) {
+            errorMsg.textContent = 'Completa email y contraseña';
+            return;
+        }
+        
+        await hacerLogin(email, password);
+    });
+}
+
+// Evento: seleccionar usuario del desplegable
+if (usuarioSelect) {
+    usuarioSelect.addEventListener('change', (e) => {
+        const email = e.target.value;
+        if (email) {
+            emailInput.value = email;
+            passwordInput.focus();
         }
     });
 }
 
-// Dashboard - Cargar datos
+// Cargar usuario recordado al iniciar
+cargarUsuarioRecordado();
+
+// Cargar lista de usuarios (si hay token guardado)
+if (localStorage.getItem('token')) {
+    cargarUsuarios();
+}
+
+// ========== DASHBOARD ==========
 async function loadDashboard() {
     token = localStorage.getItem('token');
     if (!token) {
@@ -53,7 +137,8 @@ async function loadDashboard() {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         productos = await prodResponse.json();
-        document.getElementById('totalProductos').textContent = productos.length;
+        const totalProductosElem = document.getElementById('totalProductos');
+        if (totalProductosElem) totalProductosElem.textContent = productos.length;
         
         // Cargar ventas
         const ventasResponse = await fetch(`${API_URL}/ventas/`, {
@@ -61,14 +146,15 @@ async function loadDashboard() {
         });
         const ventas = await ventasResponse.json();
         const totalVentas = ventas.reduce((sum, v) => sum + v.total, 0);
-        document.getElementById('totalVentas').textContent = `$${totalVentas}`;
+        const totalVentasElem = document.getElementById('totalVentas');
+        if (totalVentasElem) totalVentasElem.textContent = `$${totalVentas}`;
         
     } catch (error) {
         console.error('Error:', error);
     }
 }
 
-// Punto de Venta
+// ========== PUNTO DE VENTA ==========
 let carrito = [];
 
 function cargarProductosPOS() {
@@ -121,7 +207,7 @@ function actualizarCarrito() {
         container.appendChild(div);
     });
     
-    totalSpan.textContent = `$${total}`;
+    if (totalSpan) totalSpan.textContent = `$${total}`;
 }
 
 function eliminarDelCarrito(id) {
@@ -142,7 +228,7 @@ async function registrarVenta() {
     }));
     
     try {
-        const response = await fetch('http://localhost:8000/api/ventas/', {
+        const response = await fetch(`${API_URL}/ventas/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -157,10 +243,10 @@ async function registrarVenta() {
         });
         
         if (response.ok) {
-            alert('Venta registrada');
+            alert('✅ Venta registrada');
             carrito = [];
             actualizarCarrito();
-            // Recargar dashboard si es necesario
+            if (typeof loadDashboard === 'function') loadDashboard();
         } else {
             const error = await response.json();
             alert('Error: ' + JSON.stringify(error));
@@ -169,13 +255,14 @@ async function registrarVenta() {
         alert('Error de conexión: ' + error.message);
     }
 }
-    
+
 function logout() {
     localStorage.removeItem('token');
+    localStorage.removeItem('recordarUsuario');
     window.location.href = 'index.html';
 }
 
-// Ejecutar según la página
+// ========== INICIALIZAR SEGÚN LA PÁGINA ==========
 if (document.getElementById('dashboardContent')) {
     loadDashboard();
 }
