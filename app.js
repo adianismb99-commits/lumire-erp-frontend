@@ -13,25 +13,24 @@ if (loginBtn) {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         
-        try {
-            const response = await fetch(`${API_URL}/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-            
-            const data = await response.json();
-            
-            if (response.ok) {
-                token = data.access_token;
-                localStorage.setItem('token', token);
-                window.location.href = 'dashboard.html';
-            } else {
-                errorMsg.textContent = data.detail || 'Error de login';
+        // Usar fetch con modo no-cors
+        fetch('https://lumire-erp-docker.onrender.com/api/login', {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        })
+        .then(response => {
+            console.log('Respuesta:', response);
+            if (response.type === 'opaque') {
+                // No podemos leer la respuesta en modo no-cors
+                alert('Login enviado. Revisa la consola.');
             }
-        } catch (error) {
+        })
+        .catch(error => {
+            console.error('Error:', error);
             errorMsg.textContent = 'Error de conexión';
-        }
+        });
     });
 }
 
