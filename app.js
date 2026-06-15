@@ -16,13 +16,9 @@ const rememberCheckbox = document.getElementById('rememberCheckbox');
 
 // Cargar lista de usuarios desde el backend
 async function cargarUsuarios() {
-    const tokenGuardado = localStorage.getItem('token');
-    if (!tokenGuardado) return;
-    
     try {
-        const response = await fetch(`${API_URL}/usuarios/`, {
-            headers: { 'Authorization': `Bearer ${tokenGuardado}` }
-        });
+        // Endpoint público (no requiere token)
+        const response = await fetch(`${API_URL}/usuarios/public`);
         
         if (response.ok) {
             const usuarios = await response.json();
@@ -36,9 +32,13 @@ async function cargarUsuarios() {
                 option.textContent = `${user.nombre} (${user.email})`;
                 usuarioSelect.appendChild(option);
             });
+        } else {
+            console.error('Error cargando usuarios:', response.status);
+            usuarioSelect.innerHTML = '<option value="">-- Error cargando usuarios --</option>';
         }
     } catch (error) {
         console.error('Error cargando usuarios:', error);
+        usuarioSelect.innerHTML = '<option value="">-- Error de conexión --</option>';
     }
 }
 
