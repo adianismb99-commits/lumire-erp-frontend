@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUMIRE ERP - Usuarios</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="sidebar">
+            <h2>LUMIRE ERP</h2>
+            <nav>
+                <a href="dashboard.html">📊 Dashboard</a>
+                <a href="ventas.html">💰 Punto de Venta</a>
+                <a href="productos.html">📦 Productos</a>
+                <a href="usuarios.html">👥 Usuarios</a>
+                <a href="#" id="logoutBtn" style="background:#e53e3e;">🚪 Salir</a>
+            </nav>
+        </div>
+        <div class="main-content">
+            <div class="top-bar">
+                <h1>👥 Usuarios del Sistema</h1>
+                <button id="btnNuevoUsuario" class="btn-nuevo">+ Nuevo Usuario</button>
+            </div>
+            
+            <div id="formUsuario" class="form-usuario" style="display: none;">
+                <h3>Crear Nuevo Usuario</h3>
+                <input type="text" id="userNombre" placeholder="Nombre completo">
+                <input type="email" id="userEmail" placeholder="Email">
+                <input type="password" id="userPassword" placeholder="Contraseña">
+                <select id="userRol">
+                    <option value="2">VENDEDOR</option>
+                    <option value="3">CAJERO</option>
+                    <option value="4">GERENTE</option>
+                </select>
+                <div class="form-buttons">
+                    <button id="btnGuardarUsuario">Guardar</button>
+                    <button id="btnCancelarUsuario">Cancelar</button>
+                </div>
+            </div>
+            
+            <div id="listaUsuarios" class="lista-usuarios">
+                <div class="loading">Cargando usuarios...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+    <script>
+        // Funciones específicas para la página de usuarios
+        let tokenUsuarios = localStorage.getItem('token');
+        
+        async function cargarUsuariosLista() {
+            const container = document.getElementById('listaUsuarios');
+            container.innerHTML = '<div class="loading">Cargando usuarios...</div>';
+            
+            try {
+                const response = await fetch('https://lumire-erp-docker.onrender.com/api/usuarios/public', {
+                    headers: { 'Authorization': `Bearer ${tokenUsuarios}` }
+                });
+                const usuarios = await response.json();
+                
+                container.innerHTML = '';
+                usuarios.forEach(user => {
+                    const card = document.createElement('div');
+                    card.className = 'usuario-card';
+                    card.innerHTML = `
+                        <div class="usuario-info">
+                            <strong>${user.nombre}</strong><br>
+                            <span class="usuario-email">${user.email}</span><br>
+                            <span class="usuario-rol">Rol ID: ${user.rol_id || '?'}</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+                
+                if (usuarios.length === 0) {
+                    container.innerHTML = '<div class="loading">No hay usuarios registrados</div>';
+                }
+            } catch (error) {
+                container.innerHTML = '<div class="loading">Error cargando usuarios</div>';
+            }
+        }
+        
+        async function crearUsuario() {
+            const nombre = document.getElementById('userNombre').value;
+            const email = document.getElementById('userEmail').value;
+            const password = document.getElementById('userPassword').value;
+            const rolId = document.getElementById('userRol').value;
+            
+            if (!nombre || !email || !password) {
+                alert('Completa todos los campos');
+                return;
+            }
+            
+            try {
+                const response = await fetch('https://lumire-erp-docker.onrender.com/api/usuarios/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${tokenUsuarios}`
+                    },
+                    body: JSON.stringify({
+                        nombre: nombre,
+                        email: email,
+                        password: password,
+                        rol_id: parseInt(rolId),
+                        empresa_id: 1
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('Usuario creado exitosamente');
+                    document.getElementById('formUsuario').style.display = 'none';
+                    document.getElementById('userNombre').value = '';
+                    document.getElementById('userEmail').value = '';
+                    document.getElementById('userPassword').value = '';
+                    cargarUsuariosLista();
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + JSON.stringify(error));
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            }
+        }
+        
+        document.getElementById('btnNuevoUsuario')?.addEventListener('click', () => {
+            document.getElementById('formUsuario').style.display = 'block';
+        });
+        
+        document.getElementById('btnCancelarUsuario')?.addEventListener('click', () => {
+            document.getElementById('formUsuario').style.display = 'none';
+            document.getElementById('userNombre').value = '';
+            document.getElementById('userEmail').value = '';
+            document.getElementById('userPassword').value = '';
+        });
+        
+        document.getElementById('btnGuardarUsuario')?.addEventListener('click', crearUsuario);
+        
+        // Cargar usuarios al iniciar
+        cargarUsuariosLista();
+    </script>
+</body>
+</html>
