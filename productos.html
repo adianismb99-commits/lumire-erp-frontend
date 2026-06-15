@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUMIRE ERP - Productos</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="sidebar">
+            <h2>LUMIRE ERP</h2>
+            <nav>
+                <a href="dashboard.html">📊 Dashboard</a>
+                <a href="ventas.html">💰 Punto de Venta</a>
+                <a href="productos.html">📦 Productos</a>
+                <a href="#" id="logoutBtn" style="background:#e53e3e;">🚪 Salir</a>
+            </nav>
+        </div>
+        <div class="main-content">
+            <div class="top-bar">
+                <h1>Productos</h1>
+            </div>
+            <div>
+                <button onclick="mostrarFormulario()" style="width: auto; margin-bottom: 20px;">+ Nuevo Producto</button>
+                <div id="formProducto" style="display: none; background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <input type="text" id="prodNombre" placeholder="Nombre" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+                    <input type="number" id="prodPrecio" placeholder="Precio" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+                    <input type="text" id="prodUnidad" placeholder="Unidad (unidad, kg, lb)" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+                    <button onclick="crearProducto()" style="width: auto;">Guardar</button>
+                    <button onclick="ocultarFormulario()" style="width: auto; background: gray;">Cancelar</button>
+                </div>
+                <div id="listaProductos"></div>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+    <script>
+        let tokenProductos = localStorage.getItem('token');
+        
+        function mostrarFormulario() {
+            document.getElementById('formProducto').style.display = 'block';
+        }
+        
+        function ocultarFormulario() {
+            document.getElementById('formProducto').style.display = 'none';
+        }
+        
+        async function cargarProductos() {
+            const response = await fetch('http://localhost:8000/api/productos/', {
+                headers: { 'Authorization': `Bearer ${tokenProductos}` }
+            });
+            const productos = await response.json();
+            
+            const container = document.getElementById('listaProductos');
+            container.innerHTML = '<h3>Lista de Productos</h3>';
+            
+            productos.forEach(p => {
+                const div = document.createElement('div');
+                div.style.cssText = 'background: white; padding: 15px; margin-bottom: 10px; border-radius: 5px; display: flex; justify-content: space-between;';
+                div.innerHTML = `
+                    <div>
+                        <strong>${p.nombre}</strong><br>
+                        Precio: $${p.precio_venta} | Unidad: ${p.unidad_base}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        async function crearProducto() {
+            const nombre = document.getElementById('prodNombre').value;
+            const precio = parseFloat(document.getElementById('prodPrecio').value);
+            const unidad = document.getElementById('prodUnidad').value;
+            
+            if (!nombre || !precio || !unidad) {
+                alert('Complete todos los campos');
+                return;
+            }
+            
+            const response = await fetch('http://localhost:8000/api/productos/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${tokenProductos}`
+                },
+                body: JSON.stringify({
+                    nombre: nombre,
+                    precio_venta: precio,
+                    unidad_base: unidad,
+                    empresa_id: 1
+                })
+            });
+            
+            if (response.ok) {
+                alert('Producto creado');
+                ocultarFormulario();
+                document.getElementById('prodNombre').value = '';
+                document.getElementById('prodPrecio').value = '';
+                document.getElementById('prodUnidad').value = '';
+                cargarProductos();
+            } else {
+                alert('Error al crear producto');
+            }
+        }
+        
+        cargarProductos();
+    </script>
+</body>
+</html>
