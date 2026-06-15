@@ -425,3 +425,31 @@ select:focus {
     outline: none;
     border-color: #667eea;
 }
+/* Mostrar/ocultar contraseña */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper input {
+    flex: 1;
+    padding-right: 45px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+    padding: 8px;
+    width: auto;
+    color: #667eea;
+}
+
+.toggle-password:hover {
+    background: none;
+    opacity: 0.7;
+}

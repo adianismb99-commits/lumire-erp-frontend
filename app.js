@@ -14,6 +14,21 @@ const rememberCheckbox = document.getElementById('rememberCheckbox');
 
 // ========== FUNCIONES DE LOGIN ==========
 
+// Mostrar/ocultar contraseña
+const togglePassword = document.getElementById('togglePassword');
+const passwordInput = document.getElementById('password');
+
+if (togglePassword && passwordInput) {
+    togglePassword.addEventListener('click', function() {
+        // Cambiar el tipo de input entre password y text
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        
+        // Cambiar el ícono (opcional: ojo tachado)
+        this.textContent = type === 'password' ? '👁️' : '🙈';
+    });
+}
+
 // Cargar lista de usuarios desde el backend
 async function cargarUsuarios() {
     try {
