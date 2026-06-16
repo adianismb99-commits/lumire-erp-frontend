@@ -323,3 +323,34 @@ document.addEventListener('DOMContentLoaded', function() {
         if (logoutBtn) logoutBtn.addEventListener('click', logout);
     }
 });
+// Cargar empresas
+async function cargarEmpresas() {
+    try {
+        const response = await fetch(`${API_URL}/empresas`);
+        const empresas = await response.json();
+        const select = document.getElementById('empresaSelect');
+        if (select) {
+            select.innerHTML = '';
+            empresas.forEach(emp => {
+                const option = document.createElement('option');
+                option.value = emp.id;
+                option.textContent = emp.nombre;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error cargando empresas:', error);
+    }
+}
+
+// En el login, enviar empresa_id
+const empresa_id = parseInt(document.getElementById('empresaSelect').value);
+const response = await fetch(`${API_URL}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        email: email,
+        password: password,
+        empresa_id: empresa_id
+    })
+});
