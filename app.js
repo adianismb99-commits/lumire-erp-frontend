@@ -145,7 +145,10 @@ if (usuarioSelect) {
 }
 
 // Cargar usuario recordado al iniciar
-cargarUsuarioRecordado();
+// Solo ejecutar en la página de login (index.html)
+if (document.getElementById('email')) {
+    cargarUsuarioRecordado();
+}
 
 // Cargar lista de usuarios (si hay token guardado)
 if (localStorage.getItem('token')) {
@@ -315,6 +318,7 @@ if (document.getElementById('logoutBtn')) {
     document.getElementById('logoutBtn').addEventListener('click', logout);
 }
 // Cargar usuarios al iniciar la página (solo en login)
+// Solo cargar usuarios en la página de login
 if (document.getElementById('usuarioSelect')) {
     cargarUsuarios();
 }
