@@ -28,15 +28,30 @@
             <div id="formUsuario" style="display:none; background:white; padding:20px; border-radius:10px; margin-bottom:20px;">
                 <h3 id="formTitulo">Crear Usuario</h3>
                 <input type="hidden" id="userId">
+                
                 <input type="text" id="userNombre" placeholder="Nombre completo" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px;">
+                
                 <input type="email" id="userEmail" placeholder="Email" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px;">
-                <input type="password" id="userPassword" placeholder="Contraseña" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px;">
-                <input type="password" id="userPassword2" placeholder="Repetir contraseña" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px;">
+                
+                <!-- Campo Contraseña con Ojo -->
+                <div style="position:relative; margin-bottom:10px;">
+                    <input type="password" id="userPassword" placeholder="Contraseña" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; padding-right:45px;">
+                    <button type="button" onclick="togglePassword('userPassword', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; font-size:1.2em; cursor:pointer; padding:5px;">👁️</button>
+                </div>
+                
+                <!-- Campo Repetir Contraseña con Ojo -->
+                <div style="position:relative; margin-bottom:10px;">
+                    <input type="password" id="userPassword2" placeholder="Repetir contraseña" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; padding-right:45px;">
+                    <button type="button" onclick="togglePassword('userPassword2', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; font-size:1.2em; cursor:pointer; padding:5px;">👁️</button>
+                </div>
+                
                 <select id="userRol" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px;">
+                    <option value="1">ADMIN</option>
                     <option value="2">VENDEDOR</option>
                     <option value="3">CAJERO</option>
                     <option value="4">GERENTE</option>
                 </select>
+                
                 <div style="display:flex; gap:10px;">
                     <button id="btnGuardar" style="flex:1; background:#667eea;">💾 Guardar</button>
                     <button id="btnCancelar" style="flex:1; background:#718096;">❌ Cancelar</button>
@@ -54,23 +69,48 @@
         const API_URL = 'https://lumire-erp-docker.onrender.com/api';
         let token = localStorage.getItem('token');
         
-        // Logout
+        // ========== FUNCIONES ==========
+        
+        // Mostrar/ocultar contraseña
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
+        
+        // Obtener nombre del rol
+        function getRol(id) {
+            const roles = {
+                1: 'ADMIN',
+                2: 'VENDEDOR',
+                3: 'CAJERO',
+                4: 'GERENTE'
+            };
+            return roles[id] || 'Rol-' + id;
+        }
+        
+        // Cerrar sesión
         document.getElementById('logoutBtn')?.addEventListener('click', () => {
             localStorage.removeItem('token');
             window.location.href = 'index.html';
         });
         
-        // Cargar usuarios
+        // ========== CARGAR USUARIOS ==========
         async function cargarUsuarios() {
             const container = document.getElementById('listaUsuarios');
-            container.innerHTML = 'Cargando...';
+            container.innerHTML = 'Cargando usuarios...';
             
             try {
                 const res = await fetch(`${API_URL}/usuarios/public`);
                 const usuarios = await res.json();
                 
                 if (!usuarios || usuarios.length === 0) {
-                    container.innerHTML = 'No hay usuarios';
+                    container.innerHTML = 'No hay usuarios registrados';
                     return;
                 }
                 
@@ -92,17 +132,12 @@
                 });
                 container.innerHTML = html;
             } catch(e) {
-                container.innerHTML = 'Error al cargar';
+                container.innerHTML = 'Error al cargar usuarios. <button onclick="cargarUsuarios()">Reintentar</button>';
                 console.error(e);
             }
         }
         
-        function getRol(id) {
-            const roles = {1:'ADMIN',2:'VENDEDOR',3:'CAJERO',4:'GERENTE'};
-            return roles[id] || '?';
-        }
-        
-        // Editar
+        // ========== EDITAR ==========
         function editarUsuario(user) {
             document.getElementById('userId').value = user.id;
             document.getElementById('userNombre').value = user.nombre;
@@ -114,7 +149,7 @@
             document.getElementById('formUsuario').style.display = 'block';
         }
         
-        // Eliminar
+        // ========== ELIMINAR ==========
         async function eliminarUsuario(id, nombre) {
             if (!confirm(`¿Eliminar a ${nombre}?`)) return;
             try {
@@ -133,7 +168,7 @@
             }
         }
         
-        // Guardar (crear o editar)
+        // ========== GUARDAR (Crear o Editar) ==========
         async function guardarUsuario() {
             const id = document.getElementById('userId').value;
             const nombre = document.getElementById('userNombre').value;
@@ -191,7 +226,7 @@
             }
         }
         
-        // Eventos
+        // ========== EVENTOS ==========
         document.getElementById('btnNuevoUsuario')?.addEventListener('click', () => {
             document.getElementById('userId').value = '';
             document.getElementById('userNombre').value = '';
@@ -209,7 +244,7 @@
         
         document.getElementById('btnGuardar')?.addEventListener('click', guardarUsuario);
         
-        // Iniciar
+        // ========== INICIAR ==========
         cargarUsuarios();
     </script>
 </body>
