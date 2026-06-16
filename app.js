@@ -115,6 +115,7 @@ async function loadDashboard() {
         }
     }
 }
+
 // ============================================
 // 3. PUNTO DE VENTA
 // ============================================
@@ -243,14 +244,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Botón ojo para login
         const toggleBtn = document.getElementById('togglePassword');
-        const passwordInput = document.getElementById('password');
-        if (toggleBtn && passwordInput) {
+        const passInput = document.getElementById('password'); // <--- CAMBIADO: passInput
+        if (toggleBtn && passInput) {
             toggleBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
+                const type = passInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passInput.setAttribute('type', type);
                 this.textContent = type === 'password' ? '👁️' : '🙈';
-                passwordInput.focus();
+                passInput.focus();
             });
         }
 
@@ -262,8 +263,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const emailInput = document.getElementById('email');
                 if (email && emailInput) {
                     emailInput.value = email;
-                    const passwordInput = document.getElementById('password');
-                    if (passwordInput) passwordInput.focus();
+                    const pwdInput = document.getElementById('password');
+                    if (pwdInput) pwdInput.focus();
                 }
             });
         }
@@ -274,12 +275,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (loginBtn) {
             loginBtn.addEventListener('click', async function() {
                 const emailInput = document.getElementById('email');
-                const passwordInput = document.getElementById('password');
+                const pwdInput = document.getElementById('password');
                 const empresaSelect = document.getElementById('empresaSelect');
                 const rememberCheckbox = document.getElementById('rememberCheckbox');
                 
                 const email = emailInput ? emailInput.value.trim() : '';
-                const password = passwordInput ? passwordInput.value.trim() : '';
+                const password = pwdInput ? pwdInput.value.trim() : '';
                 const empresa_id = empresaSelect ? parseInt(empresaSelect.value) : 1;
                 
                 if (!email || !password) {
@@ -315,9 +316,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Enter para login
-        const passwordInput = document.getElementById('password');
-        if (passwordInput) {
-            passwordInput.addEventListener('keypress', function(e) {
+        const pwdInput = document.getElementById('password');
+        if (pwdInput) {
+            pwdInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     const loginBtn = document.getElementById('loginBtn');
                     if (loginBtn) loginBtn.click();
