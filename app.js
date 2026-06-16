@@ -2,7 +2,7 @@
 // LUMIRE ERP - app.js (versión estable)
 // ============================================
 
-const API_URL = 'https://lumire-erp-docker.onrender.com/api';
+const API_URL = 'https://lumire-erp-backend.onrender.com/api';
 let token = null;
 let productos = [];
 
