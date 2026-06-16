@@ -20,11 +20,60 @@
         .mensaje-error.visible {
             display: block;
         }
-        .campo-ok {
-            border-color: #48bb78 !important;
-        }
         .form-group {
             margin-bottom: 10px;
+            position: relative;
+        }
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .password-wrapper input {
+            width: 100%;
+            padding: 10px 45px 10px 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .password-wrapper .toggle-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 5px;
+            z-index: 2;
+        }
+        .password-wrapper .toggle-btn:hover {
+            background: none;
+        }
+        .btn-cambiar-pass {
+            background: #ed8936;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 12px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .btn-cambiar-pass:hover {
+            background: #dd6b20;
+        }
+        .campo-pass-antigua {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 5px;
+        }
+        .campo-pass-antigua.visible {
+            display: block;
         }
     </style>
 </head>
@@ -50,6 +99,7 @@
             <div id="formUsuario" style="display:none; background:white; padding:20px; border-radius:10px; margin-bottom:20px;">
                 <h3 id="formTitulo">Crear Usuario</h3>
                 <input type="hidden" id="userId">
+                <input type="hidden" id="editando" value="false">
                 
                 <div class="form-group">
                     <input type="text" id="userNombre" placeholder="Nombre completo" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">
@@ -60,16 +110,45 @@
                     <div id="emailError" class="mensaje-error">❌ Email inválido</div>
                 </div>
                 
-                <div class="form-group" style="position:relative;">
-                    <input type="password" id="userPassword" placeholder="Contraseña (mínimo 6 caracteres)" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; padding-right:45px;">
-                    <button type="button" onclick="togglePassword('userPassword', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; font-size:1.2em; cursor:pointer; padding:5px;">👁️</button>
+                <!-- Campo contraseña para NUEVO usuario -->
+                <div id="campoPassNuevo" class="form-group password-wrapper">
+                    <input type="password" id="userPassword" placeholder="Contraseña (mínimo 6 caracteres)">
+                    <button type="button" class="toggle-btn" onclick="togglePassword('userPassword', this)">👁️</button>
                     <div id="passError" class="mensaje-error">❌ La contraseña debe tener al menos 6 caracteres</div>
                 </div>
                 
-                <div class="form-group" style="position:relative;">
-                    <input type="password" id="userPassword2" placeholder="Repetir contraseña" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; padding-right:45px;">
-                    <button type="button" onclick="togglePassword('userPassword2', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; font-size:1.2em; cursor:pointer; padding:5px;">👁️</button>
+                <div id="campoPassRepetir" class="form-group password-wrapper">
+                    <input type="password" id="userPassword2" placeholder="Repetir contraseña">
+                    <button type="button" class="toggle-btn" onclick="togglePassword('userPassword2', this)">👁️</button>
                     <div id="passMatchError" class="mensaje-error">❌ Las contraseñas no coinciden</div>
+                </div>
+                
+                <!-- Campos para CAMBIAR contraseña en edición -->
+                <div id="campoCambioPass" style="display:none; background:#f7fafc; padding:15px; border-radius:5px; margin-bottom:10px;">
+                    <h4>Cambiar Contraseña</h4>
+                    
+                    <div class="form-group password-wrapper">
+                        <input type="password" id="passAntigua" placeholder="Contraseña actual">
+                        <button type="button" class="toggle-btn" onclick="togglePassword('passAntigua', this)">👁️</button>
+                    </div>
+                    
+                    <div class="form-group password-wrapper">
+                        <input type="password" id="passNueva" placeholder="Nueva contraseña (mínimo 6 caracteres)">
+                        <button type="button" class="toggle-btn" onclick="togglePassword('passNueva', this)">👁️</button>
+                    </div>
+                    
+                    <div class="form-group password-wrapper">
+                        <input type="password" id="passNueva2" placeholder="Repetir nueva contraseña">
+                        <button type="button" class="toggle-btn" onclick="togglePassword('passNueva2', this)">👁️</button>
+                        <div id="passNuevaError" class="mensaje-error">❌ Las contraseñas no coinciden</div>
+                    </div>
+                    
+                    <button id="btnAplicarCambioPass" style="background:#ed8936; width:auto; padding:8px 16px; margin-top:10px;">✅ Aplicar cambio</button>
+                    <button id="btnCancelarCambioPass" style="background:#718096; width:auto; padding:8px 16px; margin-top:10px;">❌ Cancelar</button>
+                </div>
+                
+                <div style="margin-bottom:10px;">
+                    <button id="btnMostrarCambioPass" class="btn-cambiar-pass" style="display:none;">🔑 Cambiar contraseña</button>
                 </div>
                 
                 <div class="form-group">
@@ -97,8 +176,26 @@
     <script>
         const API_URL = 'https://lumire-erp-docker.onrender.com/api';
         let token = localStorage.getItem('token');
+        let usuarioEditando = null;
         
-        // ========== FUNCIONES DE VALIDACIÓN ==========
+        // ========== FUNCIONES ==========
+        
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
+            // Evitar que el botón capture el foco del input
+            input.focus();
+            // Mover el cursor al final
+            const length = input.value.length;
+            input.setSelectionRange(length, length);
+        }
         
         function validarEmail(email) {
             return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -108,19 +205,6 @@
             return pass.length >= 6;
         }
         
-        // ========== MOSTRAR/OCULTAR CONTRASEÑA ==========
-        function togglePassword(inputId, btn) {
-            const input = document.getElementById(inputId);
-            if (input.type === 'password') {
-                input.type = 'text';
-                btn.textContent = '🙈';
-            } else {
-                input.type = 'password';
-                btn.textContent = '👁️';
-            }
-        }
-        
-        // ========== OBTENER ROL ==========
         function getRol(id) {
             const roles = {
                 1: 'ADMIN',
@@ -128,12 +212,16 @@
                 3: 'CAJERO',
                 4: 'GERENTE'
             };
-            return roles[id] || 'Sin rol';
+            return roles[id] || 'SIN ROL';
         }
         
-        // ========== VALIDAR EN TIEMPO REAL ==========
+        function limpiarErrores() {
+            document.querySelectorAll('.campo-error').forEach(el => el.classList.remove('campo-error'));
+            document.querySelectorAll('.mensaje-error').forEach(el => el.classList.remove('visible'));
+        }
         
-        // Validar Email
+        // ========== VALIDACIONES EN TIEMPO REAL ==========
+        
         document.getElementById('userEmail')?.addEventListener('input', function() {
             const email = this.value;
             const errorDiv = document.getElementById('emailError');
@@ -146,7 +234,6 @@
             }
         });
         
-        // Validar Contraseña
         document.getElementById('userPassword')?.addEventListener('input', function() {
             const pass = this.value;
             const errorDiv = document.getElementById('passError');
@@ -157,33 +244,55 @@
                 this.classList.remove('campo-error');
                 errorDiv.classList.remove('visible');
             }
-            // Verificar coincidencia con password2
-            const pass2 = document.getElementById('userPassword2').value;
-            if (pass2) {
-                verificarCoincidencia(pass, pass2);
-            }
         });
-        
-        // Verificar coincidencia de contraseñas
-        function verificarCoincidencia(pass1, pass2) {
-            const input2 = document.getElementById('userPassword2');
-            const errorDiv = document.getElementById('passMatchError');
-            if (pass2 && pass1 !== pass2) {
-                input2.classList.add('campo-error');
-                errorDiv.classList.add('visible');
-                return false;
-            } else {
-                input2.classList.remove('campo-error');
-                errorDiv.classList.remove('visible');
-                return true;
-            }
-        }
         
         document.getElementById('userPassword2')?.addEventListener('input', function() {
             const pass1 = document.getElementById('userPassword').value;
             const pass2 = this.value;
-            verificarCoincidencia(pass1, pass2);
+            const errorDiv = document.getElementById('passMatchError');
+            if (pass2 && pass1 !== pass2) {
+                this.classList.add('campo-error');
+                errorDiv.classList.add('visible');
+            } else {
+                this.classList.remove('campo-error');
+                errorDiv.classList.remove('visible');
+            }
         });
+        
+        document.getElementById('passNueva2')?.addEventListener('input', function() {
+            const pass1 = document.getElementById('passNueva').value;
+            const pass2 = this.value;
+            const errorDiv = document.getElementById('passNuevaError');
+            if (pass2 && pass1 !== pass2) {
+                this.classList.add('campo-error');
+                errorDiv.classList.add('visible');
+            } else {
+                this.classList.remove('campo-error');
+                errorDiv.classList.remove('visible');
+            }
+        });
+        
+        // ========== MOSTRAR/OCULTAR CAMPOS DE CONTRASEÑA ==========
+        
+        function mostrarCamposSegunModo(editando) {
+            const esNuevo = !editando;
+            document.getElementById('campoPassNuevo').style.display = esNuevo ? 'block' : 'none';
+            document.getElementById('campoPassRepetir').style.display = esNuevo ? 'block' : 'none';
+            document.getElementById('btnMostrarCambioPass').style.display = editando ? 'inline-block' : 'none';
+            document.getElementById('campoCambioPass').style.display = 'none';
+            document.getElementById('editando').value = editando ? 'true' : 'false';
+            
+            // Limpiar campos
+            if (esNuevo) {
+                document.getElementById('userPassword').value = '';
+                document.getElementById('userPassword2').value = '';
+            } else {
+                document.getElementById('passAntigua').value = '';
+                document.getElementById('passNueva').value = '';
+                document.getElementById('passNueva2').value = '';
+            }
+            limpiarErrores();
+        }
         
         // ========== CERRAR SESIÓN ==========
         document.getElementById('logoutBtn')?.addEventListener('click', () => {
@@ -230,18 +339,15 @@
         
         // ========== EDITAR ==========
         function editarUsuario(user) {
+            usuarioEditando = user;
             document.getElementById('userId').value = user.id;
             document.getElementById('userNombre').value = user.nombre;
             document.getElementById('userEmail').value = user.email;
             document.getElementById('userRol').value = user.rol_id || 2;
-            document.getElementById('userPassword').value = '';
-            document.getElementById('userPassword2').value = '';
             document.getElementById('formTitulo').textContent = 'Editar Usuario';
             document.getElementById('formUsuario').style.display = 'block';
-            
-            // Limpiar errores
-            document.querySelectorAll('.campo-error').forEach(el => el.classList.remove('campo-error'));
-            document.querySelectorAll('.mensaje-error').forEach(el => el.classList.remove('visible'));
+            mostrarCamposSegunModo(true);
+            document.getElementById('userNombre').focus();
         }
         
         // ========== ELIMINAR ==========
@@ -266,13 +372,11 @@
         // ========== GUARDAR ==========
         async function guardarUsuario() {
             const id = document.getElementById('userId').value;
+            const editando = document.getElementById('editando').value === 'true';
             const nombre = document.getElementById('userNombre').value;
             const email = document.getElementById('userEmail').value;
-            const pass = document.getElementById('userPassword').value;
-            const pass2 = document.getElementById('userPassword2').value;
             const rol = document.getElementById('userRol').value;
             
-            // Validar antes de guardar
             if (!nombre) {
                 alert('Nombre completo es obligatorio');
                 document.getElementById('userNombre').focus();
@@ -285,20 +389,25 @@
                 return;
             }
             
-            if (!id && !validarContraseña(pass)) {
-                alert('La contraseña debe tener al menos 6 caracteres');
-                document.getElementById('userPassword').focus();
-                return;
-            }
-            
-            if (pass !== pass2) {
-                alert('Las contraseñas no coinciden');
-                document.getElementById('userPassword2').focus();
-                return;
-            }
-            
             const data = { nombre, email, rol_id: parseInt(rol), empresa_id: 1 };
-            if (pass) data.password = pass;
+            
+            // Si es nuevo usuario, la contraseña es obligatoria
+            if (!editando) {
+                const pass = document.getElementById('userPassword').value;
+                const pass2 = document.getElementById('userPassword2').value;
+                
+                if (!validarContraseña(pass)) {
+                    alert('La contraseña debe tener al menos 6 caracteres');
+                    document.getElementById('userPassword').focus();
+                    return;
+                }
+                if (pass !== pass2) {
+                    alert('Las contraseñas no coinciden');
+                    document.getElementById('userPassword2').focus();
+                    return;
+                }
+                data.password = pass;
+            }
             
             const url = id ? `${API_URL}/usuarios/${id}` : `${API_URL}/usuarios/register`;
             const method = id ? 'PUT' : 'POST';
@@ -316,13 +425,6 @@
                 if (res.ok) {
                     alert(id ? 'Usuario actualizado' : 'Usuario creado');
                     document.getElementById('formUsuario').style.display = 'none';
-                    document.getElementById('userId').value = '';
-                    document.getElementById('userNombre').value = '';
-                    document.getElementById('userEmail').value = '';
-                    document.getElementById('userPassword').value = '';
-                    document.getElementById('userPassword2').value = '';
-                    document.querySelectorAll('.campo-error').forEach(el => el.classList.remove('campo-error'));
-                    document.querySelectorAll('.mensaje-error').forEach(el => el.classList.remove('visible'));
                     cargarUsuarios();
                 } else {
                     const error = await res.json();
@@ -333,22 +435,107 @@
             }
         }
         
+        // ========== CAMBIAR CONTRASEÑA ==========
+        document.getElementById('btnMostrarCambioPass')?.addEventListener('click', function() {
+            const cambioDiv = document.getElementById('campoCambioPass');
+            if (cambioDiv.style.display === 'none') {
+                cambioDiv.style.display = 'block';
+                this.textContent = '❌ Ocultar cambio';
+            } else {
+                cambioDiv.style.display = 'none';
+                this.textContent = '🔑 Cambiar contraseña';
+                document.getElementById('passAntigua').value = '';
+                document.getElementById('passNueva').value = '';
+                document.getElementById('passNueva2').value = '';
+                limpiarErrores();
+            }
+        });
+        
+        document.getElementById('btnCancelarCambioPass')?.addEventListener('click', function() {
+            document.getElementById('campoCambioPass').style.display = 'none';
+            document.getElementById('btnMostrarCambioPass').textContent = '🔑 Cambiar contraseña';
+            document.getElementById('passAntigua').value = '';
+            document.getElementById('passNueva').value = '';
+            document.getElementById('passNueva2').value = '';
+            limpiarErrores();
+        });
+        
+        document.getElementById('btnAplicarCambioPass')?.addEventListener('click', async function() {
+            const id = document.getElementById('userId').value;
+            if (!id) {
+                alert('Primero guarda el usuario');
+                return;
+            }
+            
+            const passAntigua = document.getElementById('passAntigua').value;
+            const passNueva = document.getElementById('passNueva').value;
+            const passNueva2 = document.getElementById('passNueva2').value;
+            
+            if (!passAntigua) {
+                alert('Ingresa la contraseña actual');
+                document.getElementById('passAntigua').focus();
+                return;
+            }
+            
+            if (!validarContraseña(passNueva)) {
+                alert('La nueva contraseña debe tener al menos 6 caracteres');
+                document.getElementById('passNueva').focus();
+                return;
+            }
+            
+            if (passNueva !== passNueva2) {
+                alert('Las contraseñas no coinciden');
+                document.getElementById('passNueva2').focus();
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_URL}/usuarios/${id}/cambiar-pass`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        pass_antigua: passAntigua,
+                        pass_nueva: passNueva
+                    })
+                });
+                
+                if (res.ok) {
+                    alert('Contraseña actualizada correctamente');
+                    document.getElementById('campoCambioPass').style.display = 'none';
+                    document.getElementById('btnMostrarCambioPass').textContent = '🔑 Cambiar contraseña';
+                    document.getElementById('passAntigua').value = '';
+                    document.getElementById('passNueva').value = '';
+                    document.getElementById('passNueva2').value = '';
+                    limpiarErrores();
+                } else {
+                    const error = await res.json();
+                    alert('Error: ' + (error.detail || 'Contraseña incorrecta'));
+                }
+            } catch(e) {
+                alert('Error de conexión');
+            }
+        });
+        
         // ========== EVENTOS ==========
         document.getElementById('btnNuevoUsuario')?.addEventListener('click', () => {
             document.getElementById('userId').value = '';
             document.getElementById('userNombre').value = '';
             document.getElementById('userEmail').value = '';
-            document.getElementById('userPassword').value = '';
-            document.getElementById('userPassword2').value = '';
             document.getElementById('userRol').value = '2';
             document.getElementById('formTitulo').textContent = 'Crear Usuario';
             document.getElementById('formUsuario').style.display = 'block';
-            document.querySelectorAll('.campo-error').forEach(el => el.classList.remove('campo-error'));
-            document.querySelectorAll('.mensaje-error').forEach(el => el.classList.remove('visible'));
+            mostrarCamposSegunModo(false);
+            limpiarErrores();
+            document.getElementById('userNombre').focus();
         });
         
         document.getElementById('btnCancelar')?.addEventListener('click', () => {
             document.getElementById('formUsuario').style.display = 'none';
+            document.getElementById('campoCambioPass').style.display = 'none';
+            document.getElementById('btnMostrarCambioPass').textContent = '🔑 Cambiar contraseña';
         });
         
         document.getElementById('btnGuardar')?.addEventListener('click', guardarUsuario);
