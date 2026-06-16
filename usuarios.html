@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>LUMIRE ERP - Usuarios</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -20,26 +20,63 @@
         </div>
         <div class="main-content">
             <div class="top-bar">
-                <h1>👥 Usuarios del Sistema</h1>
+                <h1>👥 Recursos Humanos - Usuarios</h1>
                 <button id="btnNuevoUsuario" class="btn-nuevo">+ Nuevo Usuario</button>
             </div>
             
+            <!-- Formulario para crear/editar usuario -->
             <div id="formUsuario" class="form-usuario" style="display: none;">
-                <h3>Crear Nuevo Usuario</h3>
-                <input type="text" id="userNombre" placeholder="Nombre completo">
-                <input type="email" id="userEmail" placeholder="Email">
-                <input type="password" id="userPassword" placeholder="Contraseña">
-                <select id="userRol">
-                    <option value="2">VENDEDOR</option>
-                    <option value="3">CAJERO</option>
-                    <option value="4">GERENTE</option>
-                </select>
+                <h3 id="formTitulo">Crear Nuevo Usuario</h3>
+                <input type="hidden" id="userId">
+                
+                <div class="input-group">
+                    <label>Nombre completo</label>
+                    <input type="text" id="userNombre" placeholder="Ej: Juan Pérez">
+                </div>
+                
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="userEmail" placeholder="correo@ejemplo.com">
+                </div>
+                
+                <div class="input-group">
+                    <label>Contraseña</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="userPassword" placeholder="Ingresa contraseña">
+                        <button type="button" class="toggle-password" data-target="userPassword">👁️</button>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Repetir Contraseña</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="userPassword2" placeholder="Repite la contraseña">
+                        <button type="button" class="toggle-password" data-target="userPassword2">👁️</button>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Rol</label>
+                    <select id="userRol">
+                        <option value="2">VENDEDOR - Solo punto de venta</option>
+                        <option value="3">CAJERO - Punto de venta + caja</option>
+                        <option value="4">GERENTE - Gestión general</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label>Foto de perfil (opcional)</label>
+                    <input type="file" id="userFoto" accept="image/*">
+                    <div id="fotoPreview" style="margin-top: 10px;"></div>
+                </div>
+                
                 <div class="form-buttons">
-                    <button id="btnGuardarUsuario">Guardar</button>
-                    <button id="btnCancelarUsuario">Cancelar</button>
+                    <button id="btnGuardarUsuario">💾 Guardar</button>
+                    <button id="btnCancelarUsuario" class="btn-cancelar">❌ Cancelar</button>
                 </div>
             </div>
             
+            <!-- Lista de usuarios -->
             <div id="listaUsuarios" class="lista-usuarios">
                 <div class="loading">Cargando usuarios...</div>
             </div>
@@ -48,8 +85,21 @@
     
     <script src="app.js"></script>
     <script>
-        // Funciones específicas para la página de usuarios
         let tokenUsuarios = localStorage.getItem('token');
+        let usuariosCache = [];
+        
+        // Mostrar/ocultar contraseña para todos los botones
+        document.addEventListener('click', function(e) {
+            if (e.target.classList && e.target.classList.contains('toggle-password')) {
+                const targetId = e.target.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                if (input) {
+                    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                    input.setAttribute('type', type);
+                    e.target.textContent = type === 'password' ? '👁️' : '🙈';
+                }
+            }
+        });
         
         async function cargarUsuariosLista() {
             const container = document.getElementById('listaUsuarios');
@@ -60,6 +110,7 @@
                     headers: { 'Authorization': `Bearer ${tokenUsuarios}` }
                 });
                 const usuarios = await response.json();
+                usuariosCache = usuarios;
                 
                 container.innerHTML = '';
                 usuarios.forEach(user => {
@@ -67,12 +118,32 @@
                     card.className = 'usuario-card';
                     card.innerHTML = `
                         <div class="usuario-info">
-                            <strong>${user.nombre}</strong><br>
-                            <span class="usuario-email">${user.email}</span><br>
-                            <span class="usuario-rol">Rol ID: ${user.rol_id || '?'}</span>
+                            <div class="usuario-foto">
+                                ${user.foto ? `<img src="${user.foto}" alt="foto" style="width:50px;height:50px;border-radius:50%;object-fit:cover;">` : '👤'}
+                            </div>
+                            <div class="usuario-detalles">
+                                <strong>${escapeHtml(user.nombre)}</strong><br>
+                                <span class="usuario-email">📧 ${escapeHtml(user.email)}</span><br>
+                                <span class="usuario-rol">🎭 ${getRolNombre(user.rol_id)}</span>
+                            </div>
+                        </div>
+                        <div class="usuario-acciones">
+                            <button class="btn-editar" data-id="${user.id}" data-nombre="${escapeHtml(user.nombre)}" data-email="${escapeHtml(user.email)}" data-rol="${user.rol_id}">✏️ Editar</button>
+                            <button class="btn-eliminar" data-id="${user.id}" data-nombre="${escapeHtml(user.nombre)}">🗑️ Eliminar</button>
                         </div>
                     `;
                     container.appendChild(card);
+                });
+                
+                // Eventos para editar y eliminar
+                document.querySelectorAll('.btn-editar').forEach(btn => {
+                    btn.addEventListener('click', () => editarUsuario(
+                        btn.dataset.id, btn.dataset.nombre, btn.dataset.email, btn.dataset.rol
+                    ));
+                });
+                
+                document.querySelectorAll('.btn-eliminar').forEach(btn => {
+                    btn.addEventListener('click', () => eliminarUsuario(btn.dataset.id, btn.dataset.nombre));
                 });
                 
                 if (usuarios.length === 0) {
@@ -83,39 +154,111 @@
             }
         }
         
-        async function crearUsuario() {
+        function getRolNombre(rolId) {
+            const roles = {1: 'SUPER_ADMIN', 2: 'VENDEDOR', 3: 'CAJERO', 4: 'GERENTE'};
+            return roles[rolId] || 'DESCONOCIDO';
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        function limpiarFormulario() {
+            document.getElementById('userId').value = '';
+            document.getElementById('userNombre').value = '';
+            document.getElementById('userEmail').value = '';
+            document.getElementById('userPassword').value = '';
+            document.getElementById('userPassword2').value = '';
+            document.getElementById('userRol').value = '2';
+            document.getElementById('fotoPreview').innerHTML = '';
+            document.getElementById('formTitulo').textContent = 'Crear Nuevo Usuario';
+        }
+        
+        function editarUsuario(id, nombre, email, rol) {
+            document.getElementById('userId').value = id;
+            document.getElementById('userNombre').value = nombre;
+            document.getElementById('userEmail').value = email;
+            document.getElementById('userRol').value = rol;
+            document.getElementById('userPassword').value = '';
+            document.getElementById('userPassword2').value = '';
+            document.getElementById('formTitulo').textContent = 'Editar Usuario';
+            document.getElementById('formUsuario').style.display = 'block';
+            document.getElementById('userNombre').focus();
+        }
+        
+        async function eliminarUsuario(id, nombre) {
+            if (!confirm(`¿Eliminar usuario "${nombre}"? Esta acción no se puede deshacer.`)) return;
+            
+            try {
+                const response = await fetch(`https://lumire-erp-docker.onrender.com/api/usuarios/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${tokenUsuarios}` }
+                });
+                
+                if (response.ok) {
+                    alert('Usuario eliminado');
+                    cargarUsuariosLista();
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + JSON.stringify(error));
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            }
+        }
+        
+        async function guardarUsuario() {
+            const id = document.getElementById('userId').value;
             const nombre = document.getElementById('userNombre').value;
             const email = document.getElementById('userEmail').value;
             const password = document.getElementById('userPassword').value;
+            const password2 = document.getElementById('userPassword2').value;
             const rolId = document.getElementById('userRol').value;
             
-            if (!nombre || !email || !password) {
-                alert('Completa todos los campos');
+            if (!nombre || !email) {
+                alert('Nombre y email son obligatorios');
                 return;
             }
             
+            if (!id && !password) {
+                alert('La contraseña es obligatoria para usuarios nuevos');
+                return;
+            }
+            
+            if (password !== password2) {
+                alert('Las contraseñas no coinciden');
+                return;
+            }
+            
+            const data = { nombre, email, rol_id: parseInt(rolId), empresa_id: 1 };
+            if (password) data.password = password;
+            if (id) data.id = parseInt(id);
+            
+            const url = id 
+                ? `https://lumire-erp-docker.onrender.com/api/usuarios/${id}`
+                : 'https://lumire-erp-docker.onrender.com/api/usuarios/register';
+            const method = id ? 'PUT' : 'POST';
+            
             try {
-                const response = await fetch('https://lumire-erp-docker.onrender.com/api/usuarios/register', {
-                    method: 'POST',
+                const response = await fetch(url, {
+                    method: method,
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${tokenUsuarios}`
                     },
-                    body: JSON.stringify({
-                        nombre: nombre,
-                        email: email,
-                        password: password,
-                        rol_id: parseInt(rolId),
-                        empresa_id: 1
-                    })
+                    body: JSON.stringify(data)
                 });
                 
                 if (response.ok) {
-                    alert('Usuario creado exitosamente');
+                    alert(id ? 'Usuario actualizado' : 'Usuario creado exitosamente');
                     document.getElementById('formUsuario').style.display = 'none';
-                    document.getElementById('userNombre').value = '';
-                    document.getElementById('userEmail').value = '';
-                    document.getElementById('userPassword').value = '';
+                    limpiarFormulario();
                     cargarUsuariosLista();
                 } else {
                     const error = await response.json();
@@ -127,17 +270,17 @@
         }
         
         document.getElementById('btnNuevoUsuario')?.addEventListener('click', () => {
+            limpiarFormulario();
             document.getElementById('formUsuario').style.display = 'block';
+            document.getElementById('userNombre').focus();
         });
         
         document.getElementById('btnCancelarUsuario')?.addEventListener('click', () => {
             document.getElementById('formUsuario').style.display = 'none';
-            document.getElementById('userNombre').value = '';
-            document.getElementById('userEmail').value = '';
-            document.getElementById('userPassword').value = '';
+            limpiarFormulario();
         });
         
-        document.getElementById('btnGuardarUsuario')?.addEventListener('click', crearUsuario);
+        document.getElementById('btnGuardarUsuario')?.addEventListener('click', guardarUsuario);
         
         // Cargar usuarios al iniciar
         cargarUsuariosLista();
