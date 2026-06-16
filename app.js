@@ -241,6 +241,19 @@ document.addEventListener('DOMContentLoaded', function() {
         // Cargar usuarios para el select
         cargarUsuariosLogin();
         
+        // Botón ojo para login
+        const toggleBtn = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        if (toggleBtn && passwordInput) {
+            toggleBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.textContent = type === 'password' ? '👁️' : '🙈';
+                passwordInput.focus();
+            });
+        }
+
         // Evento: seleccionar usuario
         const usuarioSelect = document.getElementById('usuarioSelect');
         if (usuarioSelect) {
@@ -317,7 +330,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (path.endsWith('dashboard.html')) {
         loadDashboard();
         const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) logoutBtn.addEventListener('click', logout);
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', logout);
+        }
     }
     
     // === PUNTO DE VENTA ===

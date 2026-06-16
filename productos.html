@@ -47,7 +47,7 @@
         }
         
         async function cargarProductos() {
-            const response = await fetch('http://localhost:8000/api/productos/', {
+            const API_URL = 'https://lumire-erp-backend.onrender.com/api'; {
                 headers: { 'Authorization': `Bearer ${tokenProductos}` }
             });
             const productos = await response.json();
@@ -78,7 +78,7 @@
                 return;
             }
             
-            const response = await fetch('http://localhost:8000/api/productos/', {
+            const API_URL = 'https://lumire-erp-backend.onrender.com/api'; {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
