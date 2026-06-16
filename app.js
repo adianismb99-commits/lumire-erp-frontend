@@ -75,25 +75,33 @@ async function cargarUsuariosLogin() {
 // ============================================
 
 async function loadDashboard() {
-    token = localStorage.getItem('token');
+    const token = localStorage.getItem('token');
     if (!token) {
         window.location.href = 'index.html';
         return;
     }
     
     try {
-        // Cargar productos
+        // Cargar productos con token
         const prodResponse = await fetch(`${API_URL}/productos/`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
         });
+        if (!prodResponse.ok) throw new Error(`Error productos: ${prodResponse.status}`);
         productos = await prodResponse.json();
         const totalProductosElem = document.getElementById('totalProductos');
         if (totalProductosElem) totalProductosElem.textContent = productos.length;
         
-        // Cargar ventas
+        // Cargar ventas con token
         const ventasResponse = await fetch(`${API_URL}/ventas/`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
         });
+        if (!ventasResponse.ok) throw new Error(`Error ventas: ${ventasResponse.status}`);
         const ventas = await ventasResponse.json();
         const totalVentas = ventas.reduce((sum, v) => sum + v.total, 0);
         const totalVentasElem = document.getElementById('totalVentas');
@@ -101,9 +109,12 @@ async function loadDashboard() {
         
     } catch (error) {
         console.error('Error en dashboard:', error);
+        const container = document.getElementById('dashboardContent');
+        if (container) {
+            container.innerHTML = `<div style="color:red; padding:20px;">Error al cargar datos: ${error.message}</div>`;
+        }
     }
 }
-
 // ============================================
 // 3. PUNTO DE VENTA
 // ============================================
