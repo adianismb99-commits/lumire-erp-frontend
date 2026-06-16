@@ -1,161 +1,55 @@
-// Configuración
+// ============================================
+// LUMIRE ERP - app.js (versión modular)
+// ============================================
+
 const API_URL = 'https://lumire-erp-docker.onrender.com/api';
 let token = null;
 let productos = [];
-let usuariosLista = [];
 
-// Elementos del DOM
-const loginBtn = document.getElementById('loginBtn');
-const errorMsg = document.getElementById('errorMsg');
-const emailInput = document.getElementById('email');
-const passwordInput = document.getElementById('password');
-const usuarioSelect = document.getElementById('usuarioSelect');
-const rememberCheckbox = document.getElementById('rememberCheckbox');
-
-// ========== FUNCIONES DE LOGIN ==========
-
-// Mostrar/ocultar contraseña - Versión mejorada
-document.addEventListener('DOMContentLoaded', function() {
-    const togglePassword = document.getElementById('togglePassword');
-    const passwordInput = document.getElementById('password');
-    
-    if (togglePassword && passwordInput) {
-        console.log('Botón ojo encontrado');
-        togglePassword.addEventListener('click', function(e) {
-            e.preventDefault();
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-            this.textContent = type === 'password' ? '👁️' : '🙈';
-            console.log('Cambiando tipo a:', type);
-        });
-    } else {
-        console.log('Botón ojo NO encontrado');
-    }
-});
-// Cargar lista de usuarios desde el backend
-// Cache de usuarios para evitar múltiples llamadas
-let usuariosCache = null;
-
-async function cargarUsuarios() {
-    // Si ya tenemos los usuarios en caché, usarlos
-    if (usuariosCache) {
-        console.log('Usando caché de usuarios');
-        llenarSelectUsuarios(usuariosCache);
-        return;
-    }
-    
-    try {
-        console.log('Cargando usuarios desde el servidor...');
-        const response = await fetch(`${API_URL}/usuarios/public`);
-        
-        if (response.ok) {
-            const usuarios = await response.json();
-            usuariosCache = usuarios; // Guardar en caché
-            llenarSelectUsuarios(usuarios);
-        } else {
-            console.error('Error cargando usuarios:', response.status);
-            usuarioSelect.innerHTML = '<option value="">-- Error cargando usuarios --</option>';
-        }
-    } catch (error) {
-        console.error('Error cargando usuarios:', error);
-        usuarioSelect.innerHTML = '<option value="">-- Error de conexión --</option>';
-    }
-}
-
-function llenarSelectUsuarios(usuarios) {
-    usuarioSelect.innerHTML = '<option value="">-- Seleccionar usuario --</option>';
-    usuarios.forEach(user => {
-        const option = document.createElement('option');
-        option.value = user.email;
-        option.textContent = `${user.nombre} (${user.email})`;
-        usuarioSelect.appendChild(option);
-    });
-}
-// Recordar usuario
-function guardarUsuarioRecordado(email) {
-    if (rememberCheckbox.checked) {
-        localStorage.setItem('recordarUsuario', email);
-    } else {
-        localStorage.removeItem('recordarUsuario');
-    }
-}
+// ============================================
+// 1. FUNCIONES DE LOGIN (solo para index.html)
+// ============================================
 
 function cargarUsuarioRecordado() {
+    const emailInput = document.getElementById('email');
+    if (!emailInput) return; // No estamos en login
+    
     const emailRecordado = localStorage.getItem('recordarUsuario');
     if (emailRecordado) {
         emailInput.value = emailRecordado;
-        rememberCheckbox.checked = true;
-        // Opcional: enfocar contraseña
-        passwordInput.focus();
+        const rememberCheckbox = document.getElementById('rememberCheckbox');
+        if (rememberCheckbox) rememberCheckbox.checked = true;
+        const passwordInput = document.getElementById('password');
+        if (passwordInput) passwordInput.focus();
     }
 }
 
-// Login
-async function hacerLogin(email, password) {
+async function cargarUsuariosLogin() {
+    const select = document.getElementById('usuarioSelect');
+    if (!select) return; // No estamos en login
+    
     try {
-        const response = await fetch(`${API_URL}/login`, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ email, password })
+        const response = await fetch(`${API_URL}/usuarios/public`);
+        if (!response.ok) throw new Error('Error cargando usuarios');
+        const usuarios = await response.json();
+        
+        select.innerHTML = '<option value="">-- Seleccionar usuario --</option>';
+        usuarios.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.email;
+            option.textContent = `${user.nombre} (${user.email})`;
+            select.appendChild(option);
         });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            token = data.access_token;
-            localStorage.setItem('token', token);
-            guardarUsuarioRecordado(email);
-            window.location.href = 'dashboard.html';
-        } else {
-            errorMsg.textContent = data.detail || 'Error de login';
-        }
     } catch (error) {
-        console.error('Error:', error);
-        errorMsg.textContent = 'Error de conexión: ' + error.message;
+        console.error('Error cargando usuarios:', error);
+        select.innerHTML = '<option value="">-- Error cargando usuarios --</option>';
     }
 }
 
-// Evento del botón login
-if (loginBtn) {
-    loginBtn.addEventListener('click', async () => {
-        const email = emailInput.value.trim();
-        const password = passwordInput.value.trim();
-        
-        if (!email || !password) {
-            errorMsg.textContent = 'Completa email y contraseña';
-            return;
-        }
-        
-        await hacerLogin(email, password);
-    });
-}
+// ============================================
+// 2. FUNCIONES DE DASHBOARD
+// ============================================
 
-// Evento: seleccionar usuario del desplegable
-if (usuarioSelect) {
-    usuarioSelect.addEventListener('change', (e) => {
-        const email = e.target.value;
-        if (email) {
-            emailInput.value = email;
-            passwordInput.focus();
-        }
-    });
-}
-
-// Cargar usuario recordado al iniciar
-// Solo ejecutar en la página de login (index.html)
-if (document.getElementById('email')) {
-    cargarUsuarioRecordado();
-}
-
-// Cargar lista de usuarios (si hay token guardado)
-if (localStorage.getItem('token')) {
-    cargarUsuarios();
-}
-
-// ========== DASHBOARD ==========
 async function loadDashboard() {
     token = localStorage.getItem('token');
     if (!token) {
@@ -182,11 +76,14 @@ async function loadDashboard() {
         if (totalVentasElem) totalVentasElem.textContent = `$${totalVentas}`;
         
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error en dashboard:', error);
     }
 }
 
-// ========== PUNTO DE VENTA ==========
+// ============================================
+// 3. PUNTO DE VENTA (ventas.html)
+// ============================================
+
 let carrito = [];
 
 function cargarProductosPOS() {
@@ -221,7 +118,6 @@ function agregarAlCarrito(producto) {
 function actualizarCarrito() {
     const container = document.getElementById('carritoItems');
     const totalSpan = document.getElementById('carritoTotal');
-    
     if (!container) return;
     
     container.innerHTML = '';
@@ -238,7 +134,6 @@ function actualizarCarrito() {
         `;
         container.appendChild(div);
     });
-    
     if (totalSpan) totalSpan.textContent = `$${total}`;
 }
 
@@ -278,7 +173,6 @@ async function registrarVenta() {
             alert('✅ Venta registrada');
             carrito = [];
             actualizarCarrito();
-            if (typeof loadDashboard === 'function') loadDashboard();
         } else {
             const error = await response.json();
             alert('Error: ' + JSON.stringify(error));
@@ -294,31 +188,138 @@ function logout() {
     window.location.href = 'index.html';
 }
 
-// ========== INICIALIZAR SEGÚN LA PÁGINA ==========
-if (document.getElementById('dashboardContent')) {
-    loadDashboard();
-}
+// ============================================
+// 4. INICIALIZACIÓN SEGÚN LA PÁGINA
+// ============================================
 
-if (document.getElementById('productosContainer')) {
-    fetch(`${API_URL}/productos/`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-    })
-    .then(r => r.json())
-    .then(data => {
-        productos = data;
-        cargarProductosPOS();
-    });
-}
-
-if (document.getElementById('pagarBtn')) {
-    document.getElementById('pagarBtn').addEventListener('click', registrarVenta);
-}
-
-if (document.getElementById('logoutBtn')) {
-    document.getElementById('logoutBtn').addEventListener('click', logout);
-}
-// Cargar usuarios al iniciar la página (solo en login)
-// Solo cargar usuarios en la página de login
-if (document.getElementById('usuarioSelect')) {
-    cargarUsuarios();
-}
+document.addEventListener('DOMContentLoaded', function() {
+    const path = window.location.pathname;
+    
+    // === Login (index.html) ===
+    if (path.endsWith('index.html') || path === '/' || path === '') {
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMsg = document.getElementById('errorMsg');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const rememberCheckbox = document.getElementById('rememberCheckbox');
+        const usuarioSelect = document.getElementById('usuarioSelect');
+        
+        // Cargar usuario recordado
+        cargarUsuarioRecordado();
+        
+        // Cargar lista de usuarios para el select
+        if (usuarioSelect) {
+            cargarUsuariosLogin();
+            
+            // Evento: seleccionar usuario del desplegable
+            usuarioSelect.addEventListener('change', function(e) {
+                const email = e.target.value;
+                if (email && emailInput) {
+                    emailInput.value = email;
+                    if (passwordInput) passwordInput.focus();
+                }
+            });
+        }
+        
+        // Evento: login
+        if (loginBtn) {
+            loginBtn.addEventListener('click', async () => {
+                const email = emailInput ? emailInput.value.trim() : '';
+                const password = passwordInput ? passwordInput.value.trim() : '';
+                
+                if (!email || !password) {
+                    if (errorMsg) errorMsg.textContent = 'Completa email y contraseña';
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`${API_URL}/login`, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ email, password })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        token = data.access_token;
+                        localStorage.setItem('token', token);
+                        if (rememberCheckbox && rememberCheckbox.checked) {
+                            localStorage.setItem('recordarUsuario', email);
+                        } else {
+                            localStorage.removeItem('recordarUsuario');
+                        }
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        if (errorMsg) errorMsg.textContent = data.detail || 'Error de login';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    if (errorMsg) errorMsg.textContent = 'Error de conexión: ' + error.message;
+                }
+            });
+        }
+        
+        // Permitir Enter para login
+        if (passwordInput) {
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && loginBtn) {
+                    loginBtn.click();
+                }
+            });
+        }
+        
+        // Botón ojo para login
+        const toggleBtn = document.querySelector('.toggle-password');
+        if (toggleBtn && passwordInput) {
+            toggleBtn.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.textContent = type === 'password' ? '👁️' : '🙈';
+            });
+        }
+    }
+    
+    // === Dashboard (dashboard.html) ===
+    if (path.endsWith('dashboard.html')) {
+        loadDashboard();
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) logoutBtn.addEventListener('click', logout);
+    }
+    
+    // === Punto de Venta (ventas.html) ===
+    if (path.endsWith('ventas.html')) {
+        // Cargar productos para POS
+        token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        fetch(`${API_URL}/productos/`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(r => r.json())
+        .then(data => {
+            productos = data;
+            cargarProductosPOS();
+        })
+        .catch(e => console.error('Error cargando productos:', e));
+        
+        const pagarBtn = document.getElementById('pagarBtn');
+        if (pagarBtn) pagarBtn.addEventListener('click', registrarVenta);
+        
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) logoutBtn.addEventListener('click', logout);
+    }
+    
+    // === Productos (productos.html) ===
+    if (path.endsWith('productos.html')) {
+        // Aquí iría la lógica de productos si la tienes
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) logoutBtn.addEventListener('click', logout);
+    }
+});
