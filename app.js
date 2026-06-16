@@ -1,5 +1,5 @@
 // ============================================
-// LUMIRE ERP - app.js (versión estable)
+// LUMIRE ERP - app.js (versión definitiva)
 // ============================================
 
 const API_URL = 'https://lumire-erp-backend.onrender.com/api';
@@ -19,8 +19,8 @@ function cargarUsuarioRecordado() {
         emailInput.value = emailRecordado;
         const rememberCheckbox = document.getElementById('rememberCheckbox');
         if (rememberCheckbox) rememberCheckbox.checked = true;
-        const passwordInput = document.getElementById('password');
-        if (passwordInput) passwordInput.focus();
+        const pwdField = document.getElementById('password');
+        if (pwdField) pwdField.focus();
     }
 }
 
@@ -82,7 +82,6 @@ async function loadDashboard() {
     }
     
     try {
-        // Cargar productos con token
         const prodResponse = await fetch(`${API_URL}/productos/`, {
             headers: { 
                 'Authorization': `Bearer ${token}`,
@@ -94,7 +93,6 @@ async function loadDashboard() {
         const totalProductosElem = document.getElementById('totalProductos');
         if (totalProductosElem) totalProductosElem.textContent = productos.length;
         
-        // Cargar ventas con token
         const ventasResponse = await fetch(`${API_URL}/ventas/`, {
             headers: { 
                 'Authorization': `Bearer ${token}`,
@@ -233,29 +231,28 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // === LOGIN (index.html) ===
     if (path.endsWith('index.html') || path === '/' || path === '') {
-        // Cargar usuario recordado
         cargarUsuarioRecordado();
-        
-        // Cargar empresas
         cargarEmpresas();
-        
-        // Cargar usuarios para el select
         cargarUsuariosLogin();
         
-        // Botón ojo para login
+        // Botón ojo
         const toggleBtn = document.getElementById('togglePassword');
-        const passInput = document.getElementById('password'); // <--- CAMBIADO: passInput
-        if (toggleBtn && passInput) {
+        const pwdField = document.getElementById('password');
+        if (toggleBtn && pwdField) {
             toggleBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                const type = passInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passInput.setAttribute('type', type);
-                this.textContent = type === 'password' ? '👁️' : '🙈';
-                passInput.focus();
+                if (pwdField.type === 'password') {
+                    pwdField.type = 'text';
+                    this.textContent = '🙈';
+                } else {
+                    pwdField.type = 'password';
+                    this.textContent = '👁️';
+                }
+                pwdField.focus();
             });
         }
 
-        // Evento: seleccionar usuario
+        // Selector de usuario
         const usuarioSelect = document.getElementById('usuarioSelect');
         if (usuarioSelect) {
             usuarioSelect.addEventListener('change', function(e) {
@@ -263,13 +260,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 const emailInput = document.getElementById('email');
                 if (email && emailInput) {
                     emailInput.value = email;
-                    const pwdInput = document.getElementById('password');
-                    if (pwdInput) pwdInput.focus();
+                    const pwd = document.getElementById('password');
+                    if (pwd) pwd.focus();
                 }
             });
         }
         
-        // Evento: login
+        // Login
         const loginBtn = document.getElementById('loginBtn');
         const errorMsg = document.getElementById('errorMsg');
         if (loginBtn) {
@@ -315,13 +312,13 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Enter para login
-        const pwdInput = document.getElementById('password');
-        if (pwdInput) {
-            pwdInput.addEventListener('keypress', function(e) {
+        // Enter
+        const pwdEnter = document.getElementById('password');
+        if (pwdEnter) {
+            pwdEnter.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
-                    const loginBtn = document.getElementById('loginBtn');
-                    if (loginBtn) loginBtn.click();
+                    const btn = document.getElementById('loginBtn');
+                    if (btn) btn.click();
                 }
             });
         }
@@ -331,9 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (path.endsWith('dashboard.html')) {
         loadDashboard();
         const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', logout);
-        }
+        if (logoutBtn) logoutBtn.addEventListener('click', logout);
     }
     
     // === PUNTO DE VENTA ===
