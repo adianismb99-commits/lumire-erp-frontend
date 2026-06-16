@@ -46,8 +46,9 @@
             border: none;
             font-size: 1.2em;
             cursor: pointer;
-            padding: 5px;
+            padding: 5px 8px;
             z-index: 2;
+            pointer-events: auto;
         }
         .password-wrapper .toggle-btn:hover {
             background: none;
@@ -60,7 +61,7 @@
             padding: 5px 12px;
             cursor: pointer;
             font-size: 0.8em;
-            margin-left: 10px;
+            margin-top: 5px;
         }
         .btn-cambiar-pass:hover {
             background: #dd6b20;
@@ -113,13 +114,13 @@
                 <!-- Campo contraseña para NUEVO usuario -->
                 <div id="campoPassNuevo" class="form-group password-wrapper">
                     <input type="password" id="userPassword" placeholder="Contraseña (mínimo 6 caracteres)">
-                    <button type="button" class="toggle-btn" onclick="togglePassword('userPassword', this)">👁️</button>
+                    <button type="button" class="toggle-btn" id="toggleUserPass">👁️</button>
                     <div id="passError" class="mensaje-error">❌ La contraseña debe tener al menos 6 caracteres</div>
                 </div>
                 
                 <div id="campoPassRepetir" class="form-group password-wrapper">
                     <input type="password" id="userPassword2" placeholder="Repetir contraseña">
-                    <button type="button" class="toggle-btn" onclick="togglePassword('userPassword2', this)">👁️</button>
+                    <button type="button" class="toggle-btn" id="toggleUserPass2">👁️</button>
                     <div id="passMatchError" class="mensaje-error">❌ Las contraseñas no coinciden</div>
                 </div>
                 
@@ -190,9 +191,9 @@
                 input.type = 'password';
                 btn.textContent = '👁️';
             }
-            // Evitar que el botón capture el foco del input
+            // Enfocar el input después de cambiar
             input.focus();
-            // Mover el cursor al final
+            // Mover cursor al final
             const length = input.value.length;
             input.setSelectionRange(length, length);
         }
@@ -219,6 +220,39 @@
             document.querySelectorAll('.campo-error').forEach(el => el.classList.remove('campo-error'));
             document.querySelectorAll('.mensaje-error').forEach(el => el.classList.remove('visible'));
         }
+        
+        // ========== TOGGLE PASSWORD PARA BOTONES CON ID ==========
+        document.getElementById('toggleUserPass')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const input = document.getElementById('userPassword');
+            if (input.type === 'password') {
+                input.type = 'text';
+                this.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                this.textContent = '👁️';
+            }
+            input.focus();
+            const length = input.value.length;
+            input.setSelectionRange(length, length);
+        });
+        
+        document.getElementById('toggleUserPass2')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const input = document.getElementById('userPassword2');
+            if (input.type === 'password') {
+                input.type = 'text';
+                this.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                this.textContent = '👁️';
+            }
+            input.focus();
+            const length = input.value.length;
+            input.setSelectionRange(length, length);
+        });
         
         // ========== VALIDACIONES EN TIEMPO REAL ==========
         
@@ -282,7 +316,6 @@
             document.getElementById('campoCambioPass').style.display = 'none';
             document.getElementById('editando').value = editando ? 'true' : 'false';
             
-            // Limpiar campos
             if (esNuevo) {
                 document.getElementById('userPassword').value = '';
                 document.getElementById('userPassword2').value = '';
@@ -391,7 +424,6 @@
             
             const data = { nombre, email, rol_id: parseInt(rol), empresa_id: 1 };
             
-            // Si es nuevo usuario, la contraseña es obligatoria
             if (!editando) {
                 const pass = document.getElementById('userPassword').value;
                 const pass2 = document.getElementById('userPassword2').value;
