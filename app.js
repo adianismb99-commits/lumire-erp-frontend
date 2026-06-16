@@ -354,3 +354,8 @@ const response = await fetch(`${API_URL}/login`, {
         empresa_id: empresa_id
     })
 });
+
+// Cargar empresas al iniciar (solo en index.html)
+if (document.getElementById('empresaSelect')) {
+    cargarEmpresas();
+}
