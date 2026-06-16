@@ -320,36 +320,60 @@
         async function cargarUsuarios() {
             const container = document.getElementById('listaUsuarios');
             container.innerHTML = 'Cargando usuarios...';
-            
+    
             try {
-                const res = await fetch(`${API_URL}/usuarios/public`);
+                // Obtener token del localStorage
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    container.innerHTML = 'No has iniciado sesión. <a href="index.html">Iniciar sesión</a>';
+                    return;
+                }
+
+                const res = await fetch(`${API_URL}/usuarios/public`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
+        
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status} - ${res.statusText}`);
+                }
+        
                 const usuarios = await res.json();
-                
-                if (!usuarios || usuarios.length === 0) {
+        
+                // Asegurar que sea un array
+                if (!Array.isArray(usuarios)) {
+                    console.error('La respuesta no es un array:', usuarios);
+                    container.innerHTML = 'Error: formato de datos incorrecto';
+                    return;
+                }
+        
+                if (usuarios.length === 0) {
                     container.innerHTML = 'No hay usuarios registrados';
                     return;
                 }
-                
+        
                 let html = '';
                 usuarios.forEach(u => {
                     html += `
                         <div style="border-bottom:1px solid #ddd; padding:15px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                             <div>
-                                <strong>${u.nombre}</strong><br>
-                                <small>${u.email}</small><br>
+                                <strong>${u.nombre || 'Sin nombre'}</strong><br>
+                                <small>${u.email || 'Sin email'}</small><br>
                                 <small>Rol: ${getRol(u.rol_id)}</small>
                             </div>
                             <div style="display:flex; gap:10px;">
                                 <button onclick='editarUsuario(${JSON.stringify(u)})' style="padding:8px 16px; background:#4299e1; border:none; border-radius:5px; color:white;">✏️ Editar</button>
-                                <button onclick='eliminarUsuario(${u.id}, "${u.nombre}")' style="padding:8px 16px; background:#e53e3e; border:none; border-radius:5px; color:white;">🗑️ Eliminar</button>
+                                <button onclick='eliminarUsuario(${u.id}, "${u.nombre || ''}")' style="padding:8px 16px; background:#e53e3e; border:none; border-radius:5px; color:white;">🗑️ Eliminar</button>
                             </div>
                         </div>
                     `;
                 });
                 container.innerHTML = html;
             } catch(e) {
+                console.error('Error:', e);
                 container.innerHTML = 'Error al cargar usuarios. <button onclick="cargarUsuarios()">Reintentar</button>';
-                console.error(e);
             }
         }
         
