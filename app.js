@@ -46,14 +46,13 @@ async function cargarEmpresas() {
     }
 }
 
-async function cargarUsuariosLogin() {
+aasync function cargarUsuariosLogin() {
     const select = document.getElementById('usuarioSelect');
     if (!select) return;
     
     try {
-        const response = await fetch(`${API_URL}/usuarios/public`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
+        // Endpoint público (no requiere token)
+        const response = await fetch(`${API_URL}/usuarios/public`);
         if (!response.ok) throw new Error('Error cargando usuarios');
         const usuarios = await response.json();
         
@@ -233,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (path.endsWith('index.html') || path === '/' || path === '') {
         cargarUsuarioRecordado();
         cargarEmpresas();
-        cargarUsuariosLogin();
+        // cargarUsuariosLogin(); // <--- COMENTAR ESTA LÍNEA
         
         // Botón ojo
         const toggleBtn = document.getElementById('togglePassword');
