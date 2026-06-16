@@ -22,22 +22,19 @@
         }
         .form-group {
             margin-bottom: 10px;
-            position: relative;
         }
-        .password-wrapper {
+        .pass-group {
             position: relative;
-            display: flex;
-            align-items: center;
             width: 100%;
         }
-        .password-wrapper input {
+        .pass-group input {
             width: 100%;
             padding: 10px 45px 10px 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
             box-sizing: border-box;
         }
-        .password-wrapper .toggle-btn {
+        .pass-group .toggle-btn {
             position: absolute;
             right: 10px;
             top: 50%;
@@ -46,12 +43,12 @@
             border: none;
             font-size: 1.2em;
             cursor: pointer;
-            padding: 5px 8px;
-            z-index: 2;
+            padding: 5px;
+            color: #667eea;
             pointer-events: auto;
         }
-        .password-wrapper .toggle-btn:hover {
-            background: none;
+        .pass-group .toggle-btn:hover {
+            opacity: 0.7;
         }
         .btn-cambiar-pass {
             background: #ed8936;
@@ -75,6 +72,10 @@
         }
         .campo-pass-antigua.visible {
             display: block;
+        }
+        /* Evitar que el botón del ojo robe el foco */
+        .pass-group .toggle-btn:focus {
+            outline: none;
         }
     </style>
 </head>
@@ -112,15 +113,19 @@
                 </div>
                 
                 <!-- Campo contraseña para NUEVO usuario -->
-                <div id="campoPassNuevo" class="form-group password-wrapper">
-                    <input type="password" id="userPassword" placeholder="Contraseña (mínimo 6 caracteres)">
-                    <button type="button" class="toggle-btn" id="toggleUserPass">👁️</button>
+                <div id="campoPassNuevo" class="form-group">
+                    <div class="pass-group">
+                        <input type="password" id="userPassword" placeholder="Contraseña (mínimo 6 caracteres)">
+                        <button type="button" class="toggle-btn" data-target="userPassword" onclick="togglePass(this)">👁️</button>
+                    </div>
                     <div id="passError" class="mensaje-error">❌ La contraseña debe tener al menos 6 caracteres</div>
                 </div>
                 
-                <div id="campoPassRepetir" class="form-group password-wrapper">
-                    <input type="password" id="userPassword2" placeholder="Repetir contraseña">
-                    <button type="button" class="toggle-btn" id="toggleUserPass2">👁️</button>
+                <div id="campoPassRepetir" class="form-group">
+                    <div class="pass-group">
+                        <input type="password" id="userPassword2" placeholder="Repetir contraseña">
+                        <button type="button" class="toggle-btn" data-target="userPassword2" onclick="togglePass(this)">👁️</button>
+                    </div>
                     <div id="passMatchError" class="mensaje-error">❌ Las contraseñas no coinciden</div>
                 </div>
                 
@@ -128,19 +133,25 @@
                 <div id="campoCambioPass" style="display:none; background:#f7fafc; padding:15px; border-radius:5px; margin-bottom:10px;">
                     <h4>Cambiar Contraseña</h4>
                     
-                    <div class="form-group password-wrapper">
-                        <input type="password" id="passAntigua" placeholder="Contraseña actual">
-                        <button type="button" class="toggle-btn" onclick="togglePassword('passAntigua', this)">👁️</button>
+                    <div class="form-group">
+                        <div class="pass-group">
+                            <input type="password" id="passAntigua" placeholder="Contraseña actual">
+                            <button type="button" class="toggle-btn" data-target="passAntigua" onclick="togglePass(this)">👁️</button>
+                        </div>
                     </div>
                     
-                    <div class="form-group password-wrapper">
-                        <input type="password" id="passNueva" placeholder="Nueva contraseña (mínimo 6 caracteres)">
-                        <button type="button" class="toggle-btn" onclick="togglePassword('passNueva', this)">👁️</button>
+                    <div class="form-group">
+                        <div class="pass-group">
+                            <input type="password" id="passNueva" placeholder="Nueva contraseña (mínimo 6 caracteres)">
+                            <button type="button" class="toggle-btn" data-target="passNueva" onclick="togglePass(this)">👁️</button>
+                        </div>
                     </div>
                     
-                    <div class="form-group password-wrapper">
-                        <input type="password" id="passNueva2" placeholder="Repetir nueva contraseña">
-                        <button type="button" class="toggle-btn" onclick="togglePassword('passNueva2', this)">👁️</button>
+                    <div class="form-group">
+                        <div class="pass-group">
+                            <input type="password" id="passNueva2" placeholder="Repetir nueva contraseña">
+                            <button type="button" class="toggle-btn" data-target="passNueva2" onclick="togglePass(this)">👁️</button>
+                        </div>
                         <div id="passNuevaError" class="mensaje-error">❌ Las contraseñas no coinciden</div>
                     </div>
                     
@@ -177,13 +188,14 @@
     <script>
         const API_URL = 'https://lumire-erp-docker.onrender.com/api';
         let token = localStorage.getItem('token');
-        let usuarioEditando = null;
         
-        // ========== FUNCIONES ==========
-        
-        function togglePassword(inputId, btn) {
-            const input = document.getElementById(inputId);
+        // ========== FUNCIÓN TOGGLE PASSWORD MEJORADA ==========
+        function togglePass(btn) {
+            const targetId = btn.getAttribute('data-target');
+            const input = document.getElementById(targetId);
             if (!input) return;
+            
+            // Cambiar el tipo
             if (input.type === 'password') {
                 input.type = 'text';
                 btn.textContent = '🙈';
@@ -191,11 +203,17 @@
                 input.type = 'password';
                 btn.textContent = '👁️';
             }
-            // Enfocar el input después de cambiar
+            
+            // Poner el foco en el input y NO en el botón
             input.focus();
-            // Mover cursor al final
+            
+            // Mover el cursor al final del texto
             const length = input.value.length;
             input.setSelectionRange(length, length);
+            
+            // Prevenir cualquier acción adicional
+            event.preventDefault();
+            event.stopPropagation();
         }
         
         function validarEmail(email) {
@@ -221,41 +239,7 @@
             document.querySelectorAll('.mensaje-error').forEach(el => el.classList.remove('visible'));
         }
         
-        // ========== TOGGLE PASSWORD PARA BOTONES CON ID ==========
-        document.getElementById('toggleUserPass')?.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const input = document.getElementById('userPassword');
-            if (input.type === 'password') {
-                input.type = 'text';
-                this.textContent = '🙈';
-            } else {
-                input.type = 'password';
-                this.textContent = '👁️';
-            }
-            input.focus();
-            const length = input.value.length;
-            input.setSelectionRange(length, length);
-        });
-        
-        document.getElementById('toggleUserPass2')?.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const input = document.getElementById('userPassword2');
-            if (input.type === 'password') {
-                input.type = 'text';
-                this.textContent = '🙈';
-            } else {
-                input.type = 'password';
-                this.textContent = '👁️';
-            }
-            input.focus();
-            const length = input.value.length;
-            input.setSelectionRange(length, length);
-        });
-        
         // ========== VALIDACIONES EN TIEMPO REAL ==========
-        
         document.getElementById('userEmail')?.addEventListener('input', function() {
             const email = this.value;
             const errorDiv = document.getElementById('emailError');
@@ -306,8 +290,7 @@
             }
         });
         
-        // ========== MOSTRAR/OCULTAR CAMPOS DE CONTRASEÑA ==========
-        
+        // ========== MOSTRAR/OCULTAR CAMPOS ==========
         function mostrarCamposSegunModo(editando) {
             const esNuevo = !editando;
             document.getElementById('campoPassNuevo').style.display = esNuevo ? 'block' : 'none';
@@ -372,7 +355,6 @@
         
         // ========== EDITAR ==========
         function editarUsuario(user) {
-            usuarioEditando = user;
             document.getElementById('userId').value = user.id;
             document.getElementById('userNombre').value = user.nombre;
             document.getElementById('userEmail').value = user.email;
