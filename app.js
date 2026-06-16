@@ -1,5 +1,5 @@
 // ============================================
-// LUMIRE ERP - app.js (versión modular)
+// LUMIRE ERP - app.js (versión estable)
 // ============================================
 
 const API_URL = 'https://lumire-erp-docker.onrender.com/api';
@@ -7,12 +7,12 @@ let token = null;
 let productos = [];
 
 // ============================================
-// 1. FUNCIONES DE LOGIN (solo para index.html)
+// 1. FUNCIONES DE LOGIN
 // ============================================
 
 function cargarUsuarioRecordado() {
     const emailInput = document.getElementById('email');
-    if (!emailInput) return; // No estamos en login
+    if (!emailInput) return;
     
     const emailRecordado = localStorage.getItem('recordarUsuario');
     if (emailRecordado) {
@@ -24,12 +24,36 @@ function cargarUsuarioRecordado() {
     }
 }
 
-async function cargarUsuariosLogin() {
-    const select = document.getElementById('usuarioSelect');
-    if (!select) return; // No estamos en login
+async function cargarEmpresas() {
+    const select = document.getElementById('empresaSelect');
+    if (!select) return;
     
     try {
-        const response = await fetch(`${API_URL}/usuarios/public`);
+        const response = await fetch(`${API_URL}/empresas`);
+        if (!response.ok) throw new Error('Error cargando empresas');
+        const empresas = await response.json();
+        
+        select.innerHTML = '';
+        empresas.forEach(emp => {
+            const option = document.createElement('option');
+            option.value = emp.id;
+            option.textContent = emp.nombre;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error cargando empresas:', error);
+        select.innerHTML = '<option value="1">Mi Empresa</option>';
+    }
+}
+
+async function cargarUsuariosLogin() {
+    const select = document.getElementById('usuarioSelect');
+    if (!select) return;
+    
+    try {
+        const response = await fetch(`${API_URL}/usuarios/public`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
         if (!response.ok) throw new Error('Error cargando usuarios');
         const usuarios = await response.json();
         
@@ -47,7 +71,7 @@ async function cargarUsuariosLogin() {
 }
 
 // ============================================
-// 2. FUNCIONES DE DASHBOARD
+// 2. DASHBOARD
 // ============================================
 
 async function loadDashboard() {
@@ -81,7 +105,7 @@ async function loadDashboard() {
 }
 
 // ============================================
-// 3. PUNTO DE VENTA (ventas.html)
+// 3. PUNTO DE VENTA
 // ============================================
 
 let carrito = [];
@@ -195,37 +219,44 @@ function logout() {
 document.addEventListener('DOMContentLoaded', function() {
     const path = window.location.pathname;
     
-    // === Login (index.html) ===
+    // === LOGIN (index.html) ===
     if (path.endsWith('index.html') || path === '/' || path === '') {
-        const loginBtn = document.getElementById('loginBtn');
-        const errorMsg = document.getElementById('errorMsg');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const rememberCheckbox = document.getElementById('rememberCheckbox');
-        const usuarioSelect = document.getElementById('usuarioSelect');
-        
         // Cargar usuario recordado
         cargarUsuarioRecordado();
         
-        // Cargar lista de usuarios para el select
+        // Cargar empresas
+        cargarEmpresas();
+        
+        // Cargar usuarios para el select
+        cargarUsuariosLogin();
+        
+        // Evento: seleccionar usuario
+        const usuarioSelect = document.getElementById('usuarioSelect');
         if (usuarioSelect) {
-            cargarUsuariosLogin();
-            
-            // Evento: seleccionar usuario del desplegable
             usuarioSelect.addEventListener('change', function(e) {
                 const email = e.target.value;
+                const emailInput = document.getElementById('email');
                 if (email && emailInput) {
                     emailInput.value = email;
+                    const passwordInput = document.getElementById('password');
                     if (passwordInput) passwordInput.focus();
                 }
             });
         }
         
         // Evento: login
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMsg = document.getElementById('errorMsg');
         if (loginBtn) {
-            loginBtn.addEventListener('click', async () => {
+            loginBtn.addEventListener('click', async function() {
+                const emailInput = document.getElementById('email');
+                const passwordInput = document.getElementById('password');
+                const empresaSelect = document.getElementById('empresaSelect');
+                const rememberCheckbox = document.getElementById('rememberCheckbox');
+                
                 const email = emailInput ? emailInput.value.trim() : '';
                 const password = passwordInput ? passwordInput.value.trim() : '';
+                const empresa_id = empresaSelect ? parseInt(empresaSelect.value) : 1;
                 
                 if (!email || !password) {
                     if (errorMsg) errorMsg.textContent = 'Completa email y contraseña';
@@ -235,18 +266,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 try {
                     const response = await fetch(`${API_URL}/login`, {
                         method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({ email, password })
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password, empresa_id })
                     });
                     
                     const data = await response.json();
                     
                     if (response.ok) {
-                        token = data.access_token;
-                        localStorage.setItem('token', token);
+                        localStorage.setItem('token', data.access_token);
                         if (rememberCheckbox && rememberCheckbox.checked) {
                             localStorage.setItem('recordarUsuario', email);
                         } else {
@@ -263,36 +290,27 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Permitir Enter para login
+        // Enter para login
+        const passwordInput = document.getElementById('password');
         if (passwordInput) {
-            passwordInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && loginBtn) {
-                    loginBtn.click();
+            passwordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const loginBtn = document.getElementById('loginBtn');
+                    if (loginBtn) loginBtn.click();
                 }
-            });
-        }
-        
-        // Botón ojo para login
-        const toggleBtn = document.querySelector('.toggle-password');
-        if (toggleBtn && passwordInput) {
-            toggleBtn.addEventListener('click', function() {
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
-                this.textContent = type === 'password' ? '👁️' : '🙈';
             });
         }
     }
     
-    // === Dashboard (dashboard.html) ===
+    // === DASHBOARD ===
     if (path.endsWith('dashboard.html')) {
         loadDashboard();
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) logoutBtn.addEventListener('click', logout);
     }
     
-    // === Punto de Venta (ventas.html) ===
+    // === PUNTO DE VENTA ===
     if (path.endsWith('ventas.html')) {
-        // Cargar productos para POS
         token = localStorage.getItem('token');
         if (!token) {
             window.location.href = 'index.html';
@@ -315,47 +333,4 @@ document.addEventListener('DOMContentLoaded', function() {
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) logoutBtn.addEventListener('click', logout);
     }
-    
-    // === Productos (productos.html) ===
-    if (path.endsWith('productos.html')) {
-        // Aquí iría la lógica de productos si la tienes
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) logoutBtn.addEventListener('click', logout);
-    }
 });
-// Cargar empresas
-async function cargarEmpresas() {
-    try {
-        const response = await fetch(`${API_URL}/empresas`);
-        const empresas = await response.json();
-        const select = document.getElementById('empresaSelect');
-        if (select) {
-            select.innerHTML = '';
-            empresas.forEach(emp => {
-                const option = document.createElement('option');
-                option.value = emp.id;
-                option.textContent = emp.nombre;
-                select.appendChild(option);
-            });
-        }
-    } catch (error) {
-        console.error('Error cargando empresas:', error);
-    }
-}
-
-// En el login, enviar empresa_id
-const empresa_id = parseInt(document.getElementById('empresaSelect').value);
-const response = await fetch(`${API_URL}/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        email: email,
-        password: password,
-        empresa_id: empresa_id
-    })
-});
-
-// Cargar empresas al iniciar (solo en index.html)
-if (document.getElementById('empresaSelect')) {
-    cargarEmpresas();
-}
