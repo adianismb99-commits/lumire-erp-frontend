@@ -46,12 +46,11 @@ async function cargarEmpresas() {
     }
 }
 
-aasync function cargarUsuariosLogin() {
+async function cargarUsuariosLogin() {
     const select = document.getElementById('usuarioSelect');
     if (!select) return;
     
     try {
-        // Endpoint público (no requiere token)
         const response = await fetch(`${API_URL}/usuarios/public`);
         if (!response.ok) throw new Error('Error cargando usuarios');
         const usuarios = await response.json();
@@ -232,14 +231,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (path.endsWith('index.html') || path === '/' || path === '') {
         cargarUsuarioRecordado();
         cargarEmpresas();
-        // cargarUsuariosLogin(); // <--- COMENTAR ESTA LÍNEA
+        cargarUsuariosLogin();
         
-        // Botón ojo
+        // ============================================
+        // BOTÓN OJO - VERSIÓN MEJORADA
+        // ============================================
         const toggleBtn = document.getElementById('togglePassword');
         const pwdField = document.getElementById('password');
+        console.log('toggleBtn:', toggleBtn);
+        console.log('pwdField:', pwdField);
+        
         if (toggleBtn && pwdField) {
             toggleBtn.addEventListener('click', function(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 if (pwdField.type === 'password') {
                     pwdField.type = 'text';
                     this.textContent = '🙈';
@@ -248,7 +253,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     this.textContent = '👁️';
                 }
                 pwdField.focus();
+                console.log('Cambiado a:', pwdField.type);
             });
+            console.log('Event listener del ojo asignado');
+        } else {
+            console.error('No se encontró toggleBtn o pwdField');
         }
 
         // Selector de usuario
