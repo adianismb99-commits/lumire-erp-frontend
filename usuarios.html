@@ -5,6 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>LUMIRE ERP - Usuarios</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .campo-error {
+            border-color: #e53e3e !important;
+            background-color: #fff5f5;
+        }
+        .mensaje-error {
+            color: #e53e3e;
+            font-size: 0.85em;
+            margin-top: -5px;
+            margin-bottom: 10px;
+            display: none;
+        }
+        .mensaje-error.visible {
+            display: block;
+        }
+        .campo-ok {
+            border-color: #48bb78 !important;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -29,28 +51,35 @@
                 <h3 id="formTitulo">Crear Usuario</h3>
                 <input type="hidden" id="userId">
                 
-                <input type="text" id="userNombre" placeholder="Nombre completo" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px;">
-                
-                <input type="email" id="userEmail" placeholder="Email" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px;">
-                
-                <!-- Campo Contraseña con Ojo -->
-                <div style="position:relative; margin-bottom:10px;">
-                    <input type="password" id="userPassword" placeholder="Contraseña" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; padding-right:45px;">
-                    <button type="button" onclick="togglePassword('userPassword', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; font-size:1.2em; cursor:pointer; padding:5px;">👁️</button>
+                <div class="form-group">
+                    <input type="text" id="userNombre" placeholder="Nombre completo" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">
                 </div>
                 
-                <!-- Campo Repetir Contraseña con Ojo -->
-                <div style="position:relative; margin-bottom:10px;">
+                <div class="form-group">
+                    <input type="email" id="userEmail" placeholder="Email" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">
+                    <div id="emailError" class="mensaje-error">❌ Email inválido</div>
+                </div>
+                
+                <div class="form-group" style="position:relative;">
+                    <input type="password" id="userPassword" placeholder="Contraseña (mínimo 6 caracteres)" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; padding-right:45px;">
+                    <button type="button" onclick="togglePassword('userPassword', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; font-size:1.2em; cursor:pointer; padding:5px;">👁️</button>
+                    <div id="passError" class="mensaje-error">❌ La contraseña debe tener al menos 6 caracteres</div>
+                </div>
+                
+                <div class="form-group" style="position:relative;">
                     <input type="password" id="userPassword2" placeholder="Repetir contraseña" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; padding-right:45px;">
                     <button type="button" onclick="togglePassword('userPassword2', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; font-size:1.2em; cursor:pointer; padding:5px;">👁️</button>
+                    <div id="passMatchError" class="mensaje-error">❌ Las contraseñas no coinciden</div>
                 </div>
                 
-                <select id="userRol" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px;">
-                    <option value="1">ADMIN</option>
-                    <option value="2">VENDEDOR</option>
-                    <option value="3">CAJERO</option>
-                    <option value="4">GERENTE</option>
-                </select>
+                <div class="form-group">
+                    <select id="userRol" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">
+                        <option value="1">ADMIN</option>
+                        <option value="2" selected>VENDEDOR</option>
+                        <option value="3">CAJERO</option>
+                        <option value="4">GERENTE</option>
+                    </select>
+                </div>
                 
                 <div style="display:flex; gap:10px;">
                     <button id="btnGuardar" style="flex:1; background:#667eea;">💾 Guardar</button>
@@ -69,9 +98,17 @@
         const API_URL = 'https://lumire-erp-docker.onrender.com/api';
         let token = localStorage.getItem('token');
         
-        // ========== FUNCIONES ==========
+        // ========== FUNCIONES DE VALIDACIÓN ==========
         
-        // Mostrar/ocultar contraseña
+        function validarEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+        
+        function validarContraseña(pass) {
+            return pass.length >= 6;
+        }
+        
+        // ========== MOSTRAR/OCULTAR CONTRASEÑA ==========
         function togglePassword(inputId, btn) {
             const input = document.getElementById(inputId);
             if (input.type === 'password') {
@@ -83,7 +120,7 @@
             }
         }
         
-        // Obtener nombre del rol
+        // ========== OBTENER ROL ==========
         function getRol(id) {
             const roles = {
                 1: 'ADMIN',
@@ -91,10 +128,64 @@
                 3: 'CAJERO',
                 4: 'GERENTE'
             };
-            return roles[id] || 'Rol-' + id;
+            return roles[id] || 'Sin rol';
         }
         
-        // Cerrar sesión
+        // ========== VALIDAR EN TIEMPO REAL ==========
+        
+        // Validar Email
+        document.getElementById('userEmail')?.addEventListener('input', function() {
+            const email = this.value;
+            const errorDiv = document.getElementById('emailError');
+            if (email && !validarEmail(email)) {
+                this.classList.add('campo-error');
+                errorDiv.classList.add('visible');
+            } else {
+                this.classList.remove('campo-error');
+                errorDiv.classList.remove('visible');
+            }
+        });
+        
+        // Validar Contraseña
+        document.getElementById('userPassword')?.addEventListener('input', function() {
+            const pass = this.value;
+            const errorDiv = document.getElementById('passError');
+            if (pass && !validarContraseña(pass)) {
+                this.classList.add('campo-error');
+                errorDiv.classList.add('visible');
+            } else {
+                this.classList.remove('campo-error');
+                errorDiv.classList.remove('visible');
+            }
+            // Verificar coincidencia con password2
+            const pass2 = document.getElementById('userPassword2').value;
+            if (pass2) {
+                verificarCoincidencia(pass, pass2);
+            }
+        });
+        
+        // Verificar coincidencia de contraseñas
+        function verificarCoincidencia(pass1, pass2) {
+            const input2 = document.getElementById('userPassword2');
+            const errorDiv = document.getElementById('passMatchError');
+            if (pass2 && pass1 !== pass2) {
+                input2.classList.add('campo-error');
+                errorDiv.classList.add('visible');
+                return false;
+            } else {
+                input2.classList.remove('campo-error');
+                errorDiv.classList.remove('visible');
+                return true;
+            }
+        }
+        
+        document.getElementById('userPassword2')?.addEventListener('input', function() {
+            const pass1 = document.getElementById('userPassword').value;
+            const pass2 = this.value;
+            verificarCoincidencia(pass1, pass2);
+        });
+        
+        // ========== CERRAR SESIÓN ==========
         document.getElementById('logoutBtn')?.addEventListener('click', () => {
             localStorage.removeItem('token');
             window.location.href = 'index.html';
@@ -142,11 +233,15 @@
             document.getElementById('userId').value = user.id;
             document.getElementById('userNombre').value = user.nombre;
             document.getElementById('userEmail').value = user.email;
-            document.getElementById('userRol').value = user.rol_id;
+            document.getElementById('userRol').value = user.rol_id || 2;
             document.getElementById('userPassword').value = '';
             document.getElementById('userPassword2').value = '';
             document.getElementById('formTitulo').textContent = 'Editar Usuario';
             document.getElementById('formUsuario').style.display = 'block';
+            
+            // Limpiar errores
+            document.querySelectorAll('.campo-error').forEach(el => el.classList.remove('campo-error'));
+            document.querySelectorAll('.mensaje-error').forEach(el => el.classList.remove('visible'));
         }
         
         // ========== ELIMINAR ==========
@@ -168,7 +263,7 @@
             }
         }
         
-        // ========== GUARDAR (Crear o Editar) ==========
+        // ========== GUARDAR ==========
         async function guardarUsuario() {
             const id = document.getElementById('userId').value;
             const nombre = document.getElementById('userNombre').value;
@@ -177,18 +272,28 @@
             const pass2 = document.getElementById('userPassword2').value;
             const rol = document.getElementById('userRol').value;
             
-            if (!nombre || !email) {
-                alert('Nombre y email son obligatorios');
+            // Validar antes de guardar
+            if (!nombre) {
+                alert('Nombre completo es obligatorio');
+                document.getElementById('userNombre').focus();
                 return;
             }
             
-            if (!id && !pass) {
-                alert('Contraseña obligatoria para nuevo usuario');
+            if (!validarEmail(email)) {
+                alert('Email inválido');
+                document.getElementById('userEmail').focus();
+                return;
+            }
+            
+            if (!id && !validarContraseña(pass)) {
+                alert('La contraseña debe tener al menos 6 caracteres');
+                document.getElementById('userPassword').focus();
                 return;
             }
             
             if (pass !== pass2) {
                 alert('Las contraseñas no coinciden');
+                document.getElementById('userPassword2').focus();
                 return;
             }
             
@@ -216,6 +321,8 @@
                     document.getElementById('userEmail').value = '';
                     document.getElementById('userPassword').value = '';
                     document.getElementById('userPassword2').value = '';
+                    document.querySelectorAll('.campo-error').forEach(el => el.classList.remove('campo-error'));
+                    document.querySelectorAll('.mensaje-error').forEach(el => el.classList.remove('visible'));
                     cargarUsuarios();
                 } else {
                     const error = await res.json();
@@ -236,6 +343,8 @@
             document.getElementById('userRol').value = '2';
             document.getElementById('formTitulo').textContent = 'Crear Usuario';
             document.getElementById('formUsuario').style.display = 'block';
+            document.querySelectorAll('.campo-error').forEach(el => el.classList.remove('campo-error'));
+            document.querySelectorAll('.mensaje-error').forEach(el => el.classList.remove('visible'));
         });
         
         document.getElementById('btnCancelar')?.addEventListener('click', () => {
