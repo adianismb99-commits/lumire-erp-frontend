@@ -26,7 +26,7 @@
         .empleado-card .nombre {
             font-weight: 600;
         }
-        .empleado-card .rol {
+        .empleado-card .cargo {
             color: var(--text-secondary);
             font-size: 0.85em;
         }
@@ -34,9 +34,14 @@
             color: var(--accent-cyan);
             font-weight: 600;
         }
+        .empleado-card .usuario-info {
+            color: var(--text-muted);
+            font-size: 0.8em;
+        }
         .empleado-acciones {
             display: flex;
             gap: 8px;
+            flex-wrap: wrap;
         }
         .empleado-acciones button {
             padding: 6px 14px;
@@ -57,6 +62,11 @@
             color: var(--bg-primary);
         }
         .btn-nomina:hover { opacity: 0.8; }
+        .btn-usuario {
+            background: var(--warning);
+            color: var(--bg-primary);
+        }
+        .btn-usuario:hover { opacity: 0.8; }
         .modal {
             display: none;
             position: fixed;
@@ -132,6 +142,22 @@
             padding: 4px 0;
             font-size: 0.85em;
             color: var(--text-secondary);
+        }
+        .badge-usuario {
+            background: var(--success);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+        .badge-sin-usuario {
+            background: var(--danger);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 600;
         }
     </style>
 </head>
@@ -243,13 +269,19 @@
         <div class="modal-content">
             <h3 id="modalEmpleadoTitulo">Nuevo Empleado</h3>
             <input type="hidden" id="empleadoId">
-            <select id="empUsuarioId" style="width: 100%; padding: 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); margin-bottom: 12px;">
-                <option value="">Seleccionar usuario...</option>
-            </select>
+            <input type="text" id="empNombre" placeholder="Nombre completo del empleado">
+            <input type="email" id="empEmail" placeholder="Email del empleado">
             <input type="text" id="empCargo" placeholder="Cargo (ej: Vendedor, Cocinero)">
             <input type="number" id="empSalarioBase" placeholder="Salario base (CUP)" step="0.01">
             <input type="number" id="empComision" placeholder="Comisión % (0-100)" step="0.01">
+            <label style="color: var(--text-secondary); font-size: 0.85em;">Fecha de ingreso al trabajo</label>
             <input type="date" id="empFechaIngreso">
+            <div style="background: var(--bg-primary); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 12px;">
+                <label style="color: var(--text-secondary); font-size: 0.8em; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="empCrearUsuario" checked>
+                    Crear usuario automáticamente con contraseña aleatoria
+                </label>
+            </div>
             <div class="modal-buttons">
                 <button class="btn-modal btn-guardar" id="btnGuardarEmpleado">Guardar</button>
                 <button class="btn-modal btn-cerrar" id="btnCerrarModalEmpleado">Cancelar</button>
@@ -296,10 +328,32 @@
         </div>
     </div>
 
+    <!-- Modal: Ver Usuario -->
+    <div id="modalUsuario" class="modal">
+        <div class="modal-content">
+            <h3>Datos de Usuario</h3>
+            <div id="usuarioDetalle">
+                <p style="color: var(--text-muted);">Cargando...</p>
+            </div>
+            <div class="modal-buttons" style="margin-top: 16px;">
+                <button class="btn-modal btn-cerrar" id="btnCerrarModalUsuario">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_URL = 'https://lumire-erp-backend.onrender.com/api';
         let token = localStorage.getItem('token');
-        let usuariosLista = [];
+
+        // ========== FUNCIÓN PARA GENERAR CONTRASEÑA ALEATORIA ==========
+        function generarContraseña(longitud = 10) {
+            const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+            let resultado = '';
+            for (let i = 0; i < longitud; i++) {
+                resultado += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+            }
+            return resultado;
+        }
 
         // ========== TABS ==========
 
@@ -320,32 +374,11 @@
                 else if (tabId === 'asistencias') document.getElementById('tabAsistencias').style.display = 'block';
                 else if (tabId === 'pagos') document.getElementById('tabPagos').style.display = 'block';
 
-                // Cargar datos según tab
                 if (tabId === 'empleados') cargarEmpleados();
                 else if (tabId === 'asistencias') cargarAsistencias();
                 else if (tabId === 'pagos') cargarPagos();
             });
         });
-
-        // ========== FUNCIONES ==========
-
-        async function cargarUsuariosSelect() {
-            try {
-                const res = await fetch(`${API_URL}/usuarios/public`);
-                const data = await res.json();
-                usuariosLista = data;
-                const select = document.getElementById('empUsuarioId');
-                select.innerHTML = '<option value="">Seleccionar usuario...</option>';
-                data.forEach(u => {
-                    const opt = document.createElement('option');
-                    opt.value = u.id;
-                    opt.textContent = `${u.nombre} (${u.email})`;
-                    select.appendChild(opt);
-                });
-            } catch (e) {
-                console.error('Error cargando usuarios:', e);
-            }
-        }
 
         // ========== EMPLEADOS ==========
 
@@ -367,25 +400,50 @@
                 }
 
                 let html = '';
-                data.forEach(emp => {
-                    const usuario = usuariosLista.find(u => u.id === emp.usuario_id);
+                for (const emp of data) {
+                    // Obtener usuario asociado (si existe)
+                    let usuarioInfo = '';
+                    let usuarioId = null;
+                    try {
+                        const userRes = await fetch(`${API_URL}/usuarios/${emp.usuario_id}`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (userRes.ok) {
+                            const user = await userRes.json();
+                            usuarioId = user.id;
+                            usuarioInfo = `
+                                <span class="badge-usuario">✅ Usuario creado</span>
+                                <div class="usuario-info">${user.email}</div>
+                            `;
+                        } else {
+                            usuarioInfo = `<span class="badge-sin-usuario">❌ Sin usuario</span>`;
+                        }
+                    } catch (e) {
+                        usuarioInfo = `<span class="badge-sin-usuario">❌ Sin usuario</span>`;
+                    }
+
                     html += `
                         <div class="empleado-card">
                             <div>
-                                <span class="nombre">${usuario?.nombre || 'Usuario no encontrado'}</span>
-                                <span class="rol">${emp.tipo || 'Sin cargo'}</span>
+                                <span class="nombre">${emp.nombre || 'Sin nombre'}</span>
+                                <span class="cargo">${emp.tipo || 'Sin cargo'}</span>
                                 <br>
                                 <span class="salario">$${emp.salario_base || 0} CUP</span>
                                 ${emp.comision_porcentaje ? `<span style="color: var(--text-muted); font-size: 0.8em;"> | Comisión: ${emp.comision_porcentaje}%</span>` : ''}
+                                <br>
+                                ${usuarioInfo}
                             </div>
                             <div class="empleado-acciones">
-                                <button class="btn-asistencia" onclick="abrirModalAsistencia(${emp.id}, '${usuario?.nombre || ''}')">
+                                <button class="btn-asistencia" onclick="abrirModalAsistencia(${emp.id}, '${emp.nombre || ''}')">
                                     <i class="fas fa-clock"></i> Asistencia
                                 </button>
-                                <button class="btn-nomina" onclick="abrirModalNomina(${emp.id}, '${usuario?.nombre || ''}')">
+                                <button class="btn-nomina" onclick="abrirModalNomina(${emp.id}, '${emp.nombre || ''}')">
                                     <i class="fas fa-calculator"></i> Nómina
                                 </button>
-                                <button class="btn-editar-ing" onclick="editarEmpleado(${JSON.stringify(emp)})" style="background: var(--accent-blue); color: white; border: none; border-radius: var(--radius-sm); padding: 6px 14px; cursor: pointer;">
+                                ${usuarioId ? `<button class="btn-usuario" onclick="verUsuario(${usuarioId})">
+                                    <i class="fas fa-user"></i> Usuario
+                                </button>` : ''}
+                                <button class="btn-editar-ing" onclick="editarEmpleado(${JSON.stringify(emp).replace(/'/g, "\\'")})" style="background: var(--accent-blue); color: white; border: none; border-radius: var(--radius-sm); padding: 6px 14px; cursor: pointer;">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <button class="btn-eliminar-ing" onclick="eliminarEmpleado(${emp.id})" style="background: var(--danger); color: white; border: none; border-radius: var(--radius-sm); padding: 6px 14px; cursor: pointer;">
@@ -394,7 +452,7 @@
                             </div>
                         </div>
                     `;
-                });
+                }
                 container.innerHTML = html;
             } catch (e) {
                 container.innerHTML = '<div style="color: var(--danger);">Error cargando empleados</div>';
@@ -405,49 +463,61 @@
         function abrirModalEmpleado(empleado = null) {
             const modal = document.getElementById('modalEmpleado');
             modal.classList.add('active');
-            if (empleado) {
+            if (empleado && empleado.id) {
                 document.getElementById('modalEmpleadoTitulo').textContent = 'Editar Empleado';
                 document.getElementById('empleadoId').value = empleado.id;
-                document.getElementById('empUsuarioId').value = empleado.usuario_id;
+                document.getElementById('empNombre').value = empleado.nombre || '';
+                document.getElementById('empEmail').value = empleado.email || '';
                 document.getElementById('empCargo').value = empleado.tipo || '';
                 document.getElementById('empSalarioBase').value = empleado.salario_base || '';
                 document.getElementById('empComision').value = empleado.comision_porcentaje || '';
                 document.getElementById('empFechaIngreso').value = empleado.fecha_ingreso || '';
+                document.getElementById('empCrearUsuario').checked = false;
             } else {
                 document.getElementById('modalEmpleadoTitulo').textContent = 'Nuevo Empleado';
                 document.getElementById('empleadoId').value = '';
-                document.getElementById('empUsuarioId').value = '';
+                document.getElementById('empNombre').value = '';
+                document.getElementById('empEmail').value = '';
                 document.getElementById('empCargo').value = '';
                 document.getElementById('empSalarioBase').value = '';
                 document.getElementById('empComision').value = '';
                 document.getElementById('empFechaIngreso').value = new Date().toISOString().split('T')[0];
+                document.getElementById('empCrearUsuario').checked = true;
             }
         }
 
         function editarEmpleado(emp) {
+            if (!emp || !emp.id) {
+                alert('ID de empleado no válido');
+                return;
+            }
             abrirModalEmpleado(emp);
         }
 
         async function guardarEmpleado() {
             const id = document.getElementById('empleadoId').value;
-            const usuario_id = document.getElementById('empUsuarioId').value;
+            const nombre = document.getElementById('empNombre').value;
+            const email = document.getElementById('empEmail').value;
             const tipo = document.getElementById('empCargo').value;
             const salario_base = parseFloat(document.getElementById('empSalarioBase').value) || 0;
             const comision = parseFloat(document.getElementById('empComision').value) || 0;
             const fecha_ingreso = document.getElementById('empFechaIngreso').value;
+            const crearUsuario = document.getElementById('empCrearUsuario').checked;
 
-            if (!usuario_id) {
-                alert('Selecciona un usuario');
+            if (!nombre || !email) {
+                alert('Nombre y email son obligatorios');
                 return;
             }
 
             const data = {
-                usuario_id: parseInt(usuario_id),
+                nombre: nombre,
+                email: email,
                 tipo: tipo || 'Empleado',
                 salario_base: salario_base,
                 comision_porcentaje: comision,
                 fecha_ingreso: fecha_ingreso || new Date().toISOString().split('T')[0],
-                empresa_id: 1
+                empresa_id: 1,
+                crear_usuario: crearUsuario
             };
 
             const url = id ? `${API_URL}/empleados/${id}` : `${API_URL}/empleados/`;
@@ -463,7 +533,12 @@
                     body: JSON.stringify(data)
                 });
                 if (res.ok) {
-                    alert(id ? 'Empleado actualizado' : 'Empleado creado');
+                    const resultado = await res.json();
+                    if (crearUsuario && resultado.usuario_creado) {
+                        alert(`✅ Empleado guardado\n\nUsuario creado:\nEmail: ${resultado.usuario_email}\nContraseña: ${resultado.usuario_password}\n\n¡Guarda esta contraseña y entrégasela al empleado!`);
+                    } else {
+                        alert(id ? 'Empleado actualizado' : 'Empleado creado');
+                    }
                     document.getElementById('modalEmpleado').classList.remove('active');
                     cargarEmpleados();
                 } else {
@@ -476,6 +551,10 @@
         }
 
         async function eliminarEmpleado(id) {
+            if (!id) {
+                alert('ID de empleado no válido');
+                return;
+            }
             if (!confirm('¿Eliminar este empleado?')) return;
             try {
                 const res = await fetch(`${API_URL}/empleados/${id}`, {
@@ -486,7 +565,8 @@
                     alert('Empleado eliminado');
                     cargarEmpleados();
                 } else {
-                    alert('Error al eliminar');
+                    const error = await res.json();
+                    alert('Error: ' + JSON.stringify(error));
                 }
             } catch (e) {
                 alert('Error de conexión');
@@ -520,10 +600,9 @@
 
                 let html = '';
                 data.forEach(a => {
-                    const empleado = a.empleados || {};
                     html += `
                         <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
-                            <span>${empleado.nombre || 'Empleado #' + a.empleado_id}</span>
+                            <span>${a.empleado_nombre || 'Empleado #' + a.empleado_id}</span>
                             <span>Entrada: ${a.hora_entrada || '--:--'} | Salida: ${a.hora_salida || '--:--'}</span>
                             <span>${a.horas_trabajadas || 0}h</span>
                         </div>
@@ -619,23 +698,16 @@
                 let html = `
                     <div style="background: var(--bg-primary); padding: 16px; border-radius: var(--radius-sm);">
                         <div class="nomina-item"><span>Salario base</span><span>$${data.salario_base}</span></div>
+                        <div class="nomina-item"><span>Horas trabajadas</span><span>${data.horas_trabajadas}h</span></div>
+                        <div class="nomina-item"><span>Días trabajados</span><span>${data.dias_trabajados}</span></div>
+                        <div class="nomina-item"><span>Salario devengado</span><span>$${data.salario_devengado}</span></div>
                         <div class="nomina-item"><span>Comisiones</span><span>$${data.comisiones}</span></div>
                         <div class="nomina-item"><span>Bonos</span><span>$${data.bonos}</span></div>
                         <div class="nomina-item" style="border-bottom: 2px solid var(--border-color);"><span>Deducciones</span><span>-$${data.deducciones}</span></div>
                         <div class="nomina-item" style="font-size: 1.2em;"><span><strong>Total a pagar</strong></span><span class="total">$${data.total}</span></div>
                     </div>
-                    <div style="margin-top: 12px;">
-                        <button id="btnGenerarRecibo" class="btn-primary" style="width: 100%;">
-                            <i class="fas fa-file-pdf"></i> Generar Recibo
-                        </button>
-                    </div>
                 `;
                 detalle.innerHTML = html;
-
-                document.getElementById('btnGenerarRecibo')?.addEventListener('click', () => {
-                    alert('📄 Recibo generado (exportar a PDF pronto)');
-                });
-
             } catch (e) {
                 detalle.innerHTML = '<div style="color: var(--danger);">Error calculando nómina</div>';
                 console.error(e);
@@ -683,7 +755,6 @@
                 });
                 container.innerHTML = html;
 
-                // Actualizar resumen
                 const totalMes = data.reduce((sum, p) => sum + p.total, 0);
                 document.getElementById('nominaMes').textContent = `$${totalMes}`;
                 document.getElementById('porPagar').textContent = `$${totalMes}`;
@@ -694,9 +765,37 @@
             }
         }
 
+        // ========== VER USUARIO ==========
+
+        async function verUsuario(id) {
+            const modal = document.getElementById('modalUsuario');
+            modal.classList.add('active');
+            const container = document.getElementById('usuarioDetalle');
+            container.innerHTML = '<div style="color: var(--text-muted);">Cargando...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/usuarios/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const user = await res.json();
+
+                container.innerHTML = `
+                    <div style="background: var(--bg-primary); padding: 16px; border-radius: var(--radius-sm);">
+                        <p><strong>Nombre:</strong> ${user.nombre || 'Sin nombre'}</p>
+                        <p><strong>Email:</strong> ${user.email || 'Sin email'}</p>
+                        <p><strong>Rol:</strong> ${user.rol_id === 1 ? 'ADMIN' : user.rol_id === 2 ? 'VENDEDOR' : user.rol_id === 3 ? 'CAJERO' : user.rol_id === 4 ? 'GERENTE' : 'DESCONOCIDO'}</p>
+                        <p><strong>Activo:</strong> ${user.activo ? '✅ Sí' : '❌ No'}</p>
+                    </div>
+                `;
+            } catch (e) {
+                container.innerHTML = '<div style="color: var(--danger);">Error cargando usuario</div>';
+                console.error(e);
+            }
+        }
+
         // ========== EVENTOS ==========
 
-        document.getElementById('btnNuevoEmpleado')?.addEventListener('click', abrirModalEmpleado);
+        document.getElementById('btnNuevoEmpleado')?.addEventListener('click', () => abrirModalEmpleado());
 
         document.getElementById('btnCerrarModalEmpleado')?.addEventListener('click', () => {
             document.getElementById('modalEmpleado').classList.remove('active');
@@ -716,6 +815,10 @@
 
         document.getElementById('btnCalcularNomina')?.addEventListener('click', calcularNomina);
 
+        document.getElementById('btnCerrarModalUsuario')?.addEventListener('click', () => {
+            document.getElementById('modalUsuario').classList.remove('active');
+        });
+
         document.getElementById('logoutBtn')?.addEventListener('click', () => {
             localStorage.removeItem('token');
             window.location.href = 'index.html';
@@ -730,12 +833,7 @@
 
         // ========== INICIAR ==========
 
-        async function init() {
-            await cargarUsuariosSelect();
-            await cargarEmpleados();
-        }
-
-        init();
+        cargarEmpleados();
     </script>
 </body>
 </html>
