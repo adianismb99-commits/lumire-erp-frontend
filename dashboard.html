@@ -3,9 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>LUMIRE ERP - Dashboard</title>
+    <title>LUMIRE ERP - Panel de Control</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Estilos específicos del dashboard */
+        .chart-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .chart-container h3 {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .chart-bar {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            height: 180px;
+            padding-top: 12px;
+        }
+        .chart-bar .bar-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .chart-bar .bar-item .bar {
+            width: 100%;
+            max-width: 40px;
+            background: linear-gradient(180deg, var(--accent-purple), var(--accent-cyan));
+            border-radius: 4px 4px 0 0;
+            transition: height 0.6s ease;
+            min-height: 10px;
+            position: relative;
+        }
+        .chart-bar .bar-item .bar-label {
+            color: var(--text-muted);
+            font-size: 0.7em;
+            text-align: center;
+        }
+        .chart-bar .bar-item .bar-value {
+            color: var(--text-secondary);
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .comparativa-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+        }
+        .comparativa-item {
+            text-align: center;
+            padding: 12px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-sm);
+        }
+        .comparativa-item .label {
+            color: var(--text-muted);
+            font-size: 0.75em;
+            text-transform: uppercase;
+        }
+        .comparativa-item .value {
+            font-size: 1.4em;
+            font-weight: 700;
+        }
+        .comparativa-item .value.up { color: var(--success); }
+        .comparativa-item .value.down { color: var(--danger); }
+        .comparativa-item .value.neutral { color: var(--warning); }
+
+        .alerta-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+            border-left: 4px solid var(--warning);
+        }
+        .alerta-item.critical { border-left-color: var(--danger); }
+        .alerta-item.success { border-left-color: var(--success); }
+        .alerta-item .icon { font-size: 1.2em; }
+        .alerta-item .text { flex: 1; font-size: 0.9em; }
+
+        .top-productos-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .top-productos-item .pos {
+            font-weight: 700;
+            color: var(--text-muted);
+            width: 28px;
+        }
+        .top-productos-item .name { flex: 1; }
+        .top-productos-item .amount { color: var(--accent-cyan); font-weight: 600; }
+
+        @media (max-width: 768px) {
+            .comparativa-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .chart-bar {
+                height: 120px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -14,7 +128,7 @@
             <div class="logo">LUMIRE <span>ERP</span></div>
             <nav>
                 <a href="dashboard.html" class="active">
-                    <i class="fas fa-chart-pie"></i> Dashboard
+                    <i class="fas fa-chart-pie"></i> Panel de Control
                 </a>
                 <a href="ventas.html">
                     <i class="fas fa-cash-register"></i> Punto de Venta
@@ -34,53 +148,164 @@
         <!-- Main Content -->
         <main class="main-content">
             <div class="top-bar">
-                <h1><i class="fas fa-chart-pie" style="color: var(--accent-purple);"></i> Dashboard</h1>
+                <h1><i class="fas fa-chart-pie" style="color: var(--accent-purple);"></i> Panel de Control</h1>
                 <div class="user-info">
                     <i class="fas fa-bell" style="color: var(--text-secondary); cursor: pointer;"></i>
                     <div class="avatar">A</div>
                 </div>
             </div>
 
-            <!-- Cards -->
+            <!-- Tarjetas de estadísticas -->
             <div class="cards-grid" id="dashboardContent">
                 <div class="card">
-                    <div class="card-label">Productos</div>
-                    <div class="card-value purple" id="totalProductos">0</div>
+                    <div class="card-label">Ventas hoy</div>
+                    <div class="card-value purple" id="ventasHoy">$0</div>
                 </div>
                 <div class="card">
-                    <div class="card-label">Ventas Totales</div>
-                    <div class="card-value cyan" id="totalVentas">$0</div>
+                    <div class="card-label">Ventas del mes</div>
+                    <div class="card-value cyan" id="ventasMes">$0</div>
                 </div>
                 <div class="card">
-                    <div class="card-label">Estado del Sistema</div>
-                    <div class="card-value green" style="font-size: 1.2em;">🟢 Activo</div>
+                    <div class="card-label">Productos activos</div>
+                    <div class="card-value green" id="totalProductos">0</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Stock bajo</div>
+                    <div class="card-value red" id="stockBajo">0</div>
                 </div>
                 <div class="card">
                     <div class="card-label">Usuarios</div>
                     <div class="card-value yellow" id="totalUsuarios">0</div>
                 </div>
+                <div class="card">
+                    <div class="card-label">Pedidos pendientes</div>
+                    <div class="card-value" id="pedidosPendientes" style="color: var(--warning);">0</div>
+                </div>
             </div>
 
-            <!-- Sección adicional -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-                <div class="card" style="padding: 24px;">
-                    <h3 style="font-size: 1em; margin-bottom: 16px; color: var(--text-secondary);">
-                        <i class="fas fa-clock" style="color: var(--accent-cyan);"></i> Actividad Reciente
-                    </h3>
-                    <div style="color: var(--text-muted); font-size: 0.9em;">
-                        <p>🟢 Venta #45 registrada - $150</p>
-                        <p>🟢 Venta #44 registrada - $80</p>
-                        <p>🟡 Stock bajo: Harina</p>
+            <!-- Gráfico de ventas semanales -->
+            <div class="chart-container">
+                <h3><i class="fas fa-chart-bar" style="color: var(--accent-cyan);"></i> Ventas de la semana</h3>
+                <div class="chart-bar" id="chartVentasSemana">
+                    <div class="bar-item">
+                        <div class="bar" style="height: 60px;"></div>
+                        <span class="bar-value">$120</span>
+                        <span class="bar-label">Lun</span>
+                    </div>
+                    <div class="bar-item">
+                        <div class="bar" style="height: 80px;"></div>
+                        <span class="bar-value">$180</span>
+                        <span class="bar-label">Mar</span>
+                    </div>
+                    <div class="bar-item">
+                        <div class="bar" style="height: 50px;"></div>
+                        <span class="bar-value">$90</span>
+                        <span class="bar-label">Mié</span>
+                    </div>
+                    <div class="bar-item">
+                        <div class="bar" style="height: 110px;"></div>
+                        <span class="bar-value">$250</span>
+                        <span class="bar-label">Jue</span>
+                    </div>
+                    <div class="bar-item">
+                        <div class="bar" style="height: 140px;"></div>
+                        <span class="bar-value">$320</span>
+                        <span class="bar-label">Vie</span>
+                    </div>
+                    <div class="bar-item">
+                        <div class="bar" style="height: 90px;"></div>
+                        <span class="bar-value">$200</span>
+                        <span class="bar-label">Sáb</span>
+                    </div>
+                    <div class="bar-item">
+                        <div class="bar" style="height: 40px;"></div>
+                        <span class="bar-value">$60</span>
+                        <span class="bar-label">Dom</span>
                     </div>
                 </div>
-                <div class="card" style="padding: 24px;">
-                    <h3 style="font-size: 1em; margin-bottom: 16px; color: var(--text-secondary);">
-                        <i class="fas fa-star" style="color: var(--warning);"></i> Top Productos
-                    </h3>
-                    <div style="color: var(--text-muted); font-size: 0.9em;">
-                        <p>🥇 Croqueta - $2,400</p>
-                        <p>🥈 Buñuelo - $1,800</p>
-                        <p>🥉 Hamburguesa - $1,200</p>
+            </div>
+
+            <!-- Comparativa -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
+                <!-- Comparativa -->
+                <div class="chart-container" style="margin-bottom: 0;">
+                    <h3><i class="fas fa-arrow-up" style="color: var(--success);"></i> Comparativa con mes anterior</h3>
+                    <div class="comparativa-grid">
+                        <div class="comparativa-item">
+                            <div class="label">Mes actual</div>
+                            <div class="value up" id="mesActual">$4,200</div>
+                        </div>
+                        <div class="comparativa-item">
+                            <div class="label">Mes anterior</div>
+                            <div class="value" id="mesAnterior">$3,800</div>
+                        </div>
+                        <div class="comparativa-item">
+                            <div class="label">Crecimiento</div>
+                            <div class="value up" id="crecimiento">+10.5%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top productos -->
+                <div class="chart-container" style="margin-bottom: 0;">
+                    <h3><i class="fas fa-trophy" style="color: var(--warning);"></i> Top productos</h3>
+                    <div id="topProductos">
+                        <div class="top-productos-item">
+                            <span class="pos">🥇</span>
+                            <span class="name">Croqueta</span>
+                            <span class="amount">$2,400</span>
+                        </div>
+                        <div class="top-productos-item">
+                            <span class="pos">🥈</span>
+                            <span class="name">Buñuelo</span>
+                            <span class="amount">$1,800</span>
+                        </div>
+                        <div class="top-productos-item">
+                            <span class="pos">🥉</span>
+                            <span class="name">Hamburguesa</span>
+                            <span class="amount">$1,200</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alertas y actividad reciente -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <!-- Alertas -->
+                <div class="chart-container" style="margin-bottom: 0;">
+                    <h3><i class="fas fa-exclamation-triangle" style="color: var(--warning);"></i> Alertas</h3>
+                    <div id="alertasContainer">
+                        <div class="alerta-item critical">
+                            <span class="icon">🔴</span>
+                            <span class="text"><strong>Stock crítico:</strong> Harina - 5 unidades</span>
+                        </div>
+                        <div class="alerta-item">
+                            <span class="icon">🟡</span>
+                            <span class="text"><strong>Stock bajo:</strong> Aceite - 8 unidades</span>
+                        </div>
+                        <div class="alerta-item success">
+                            <span class="icon">🟢</span>
+                            <span class="text"><strong>Venta destacada:</strong> Croqueta #45 - $150</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actividad reciente -->
+                <div class="chart-container" style="margin-bottom: 0;">
+                    <h3><i class="fas fa-clock" style="color: var(--accent-cyan);"></i> Actividad reciente</h3>
+                    <div id="actividadReciente">
+                        <div style="color: var(--text-secondary); font-size: 0.9em; padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+                            🟢 Venta #45 - $150 - hace 5 min
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 0.9em; padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+                            🟢 Venta #44 - $80 - hace 20 min
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 0.9em; padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+                            🟡 Stock bajo: Harina - hace 1 hora
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 0.9em; padding: 6px 0;">
+                            🔴 Pedido #12 atrasado - hace 2 horas
+                        </div>
                     </div>
                 </div>
             </div>
