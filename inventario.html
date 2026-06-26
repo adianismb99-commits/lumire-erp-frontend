@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>LUMIRE ERP - Inventario</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .ingrediente-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+        .ingrediente-card:hover {
+            border-color: var(--accent-purple);
+        }
+        .ingrediente-card .nombre {
+            font-weight: 600;
+        }
+        .ingrediente-card .stock {
+            font-weight: 600;
+        }
+        .ingrediente-card .stock.bajo {
+            color: var(--danger);
+        }
+        .ingrediente-card .stock.medio {
+            color: var(--warning);
+        }
+        .ingrediente-card .stock.alto {
+            color: var(--success);
+        }
+        .ingrediente-card .unidad {
+            color: var(--text-muted);
+            font-size: 0.85em;
+        }
+        .ingrediente-acciones {
+            display: flex;
+            gap: 8px;
+        }
+        .ingrediente-acciones button {
+            padding: 6px 14px;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-editar-ing {
+            background: var(--accent-blue);
+            color: white;
+        }
+        .btn-editar-ing:hover { opacity: 0.8; }
+        .btn-eliminar-ing {
+            background: var(--danger);
+            color: white;
+        }
+        .btn-eliminar-ing:hover { opacity: 0.8; }
+        .btn-comprar {
+            background: var(--success);
+            color: white;
+        }
+        .btn-comprar:hover { opacity: 0.8; }
+        .btn-ajustar {
+            background: var(--warning);
+            color: var(--bg-primary);
+        }
+        .btn-ajustar:hover { opacity: 0.8; }
+        .stock-minimo {
+            color: var(--text-muted);
+            font-size: 0.8em;
+        }
+        .movimiento-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9em;
+        }
+        .movimiento-item .fecha {
+            color: var(--text-muted);
+            font-size: 0.8em;
+        }
+        .movimiento-item .cantidad.entrada {
+            color: var(--success);
+        }
+        .movimiento-item .cantidad.salida {
+            color: var(--danger);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-content h3 {
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        .modal-content input, .modal-content select {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            font-size: 0.95em;
+        }
+        .modal-content .btn-modal {
+            padding: 10px 24px;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .modal-content .btn-modal:hover {
+            opacity: 0.8;
+        }
+        .modal-content .btn-guardar {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+        }
+        .modal-content .btn-cerrar {
+            background: var(--danger);
+            color: white;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        .historial-container {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .badge-stock {
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+        .badge-stock.bajo { background: var(--danger); color: white; }
+        .badge-stock.medio { background: var(--warning); color: var(--bg-primary); }
+        .badge-stock.alto { background: var(--success); color: white; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">LUMIRE <span>ERP</span></div>
+            <nav>
+                <a href="dashboard.html"><i class="fas fa-chart-pie"></i> Panel de Control</a>
+                <a href="ventas.html"><i class="fas fa-cash-register"></i> Punto de Venta</a>
+                <a href="productos.html"><i class="fas fa-boxes"></i> Productos</a>
+                <a href="recetas.html"><i class="fas fa-utensils"></i> Recetas</a>
+                <a href="inventario.html" class="active"><i class="fas fa-warehouse"></i> Inventario</a>
+                <a href="usuarios.html"><i class="fas fa-users"></i> Usuarios</a>
+                <a href="#" id="logoutBtn" class="logout"><i class="fas fa-sign-out-alt"></i> Salir</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <h1><i class="fas fa-warehouse" style="color: var(--accent-cyan);"></i> Inventario</h1>
+                <button id="btnNuevoIngrediente" class="btn-primary" style="width: auto; padding: 10px 20px; background: var(--success);">
+                    <i class="fas fa-plus"></i> Nuevo Ingrediente
+                </button>
+            </div>
+
+            <!-- Resumen rápido -->
+            <div class="cards-grid" style="margin-bottom: 24px;">
+                <div class="card">
+                    <div class="card-label">Ingredientes totales</div>
+                    <div class="card-value purple" id="totalIngredientes">0</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Stock bajo</div>
+                    <div class="card-value red" id="stockBajo">0</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Sin stock</div>
+                    <div class="card-value yellow" id="sinStock">0</div>
+                </div>
+            </div>
+
+            <!-- Lista de ingredientes -->
+            <div class="card" style="padding: 20px;">
+                <h3 style="font-size: 1em; margin-bottom: 16px; color: var(--text-secondary);">
+                    <i class="fas fa-list"></i> Ingredientes
+                </h3>
+                <div id="listaIngredientes">
+                    <div style="color: var(--text-muted);">Cargando ingredientes...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal: Crear/Editar Ingrediente -->
+    <div id="modalIngrediente" class="modal">
+        <div class="modal-content">
+            <h3 id="modalIngredienteTitulo">Nuevo Ingrediente</h3>
+            <input type="hidden" id="ingredienteId">
+            <input type="text" id="ingNombre" placeholder="Nombre del ingrediente">
+            <input type="text" id="ingUnidad" placeholder="Unidad (kg, g, L, ml, unidad)">
+            <input type="number" id="ingStockMinimo" placeholder="Stock mínimo" step="0.01">
+            <input type="number" id="ingStockActual" placeholder="Stock actual (opcional)" step="0.01">
+            <div class="modal-buttons">
+                <button class="btn-modal btn-guardar" id="btnGuardarIngrediente">Guardar</button>
+                <button class="btn-modal btn-cerrar" id="btnCerrarModalIngrediente">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Comprar -->
+    <div id="modalComprar" class="modal">
+        <div class="modal-content">
+            <h3>Registrar Compra</h3>
+            <input type="hidden" id="compraIngredienteId">
+            <p style="color: var(--text-secondary); margin-bottom: 12px;">
+                Ingrediente: <strong id="compraNombre" style="color: var(--text-primary);"></strong>
+            </p>
+            <input type="number" id="compraCantidad" placeholder="Cantidad comprada" step="0.01">
+            <input type="number" id="compraCosto" placeholder="Costo total (opcional)" step="0.01">
+            <div class="modal-buttons">
+                <button class="btn-modal btn-guardar" id="btnRegistrarCompra">Registrar</button>
+                <button class="btn-modal btn-cerrar" id="btnCerrarModalComprar">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Ajustar Stock -->
+    <div id="modalAjustar" class="modal">
+        <div class="modal-content">
+            <h3>Ajustar Stock</h3>
+            <input type="hidden" id="ajusteIngredienteId">
+            <p style="color: var(--text-secondary); margin-bottom: 12px;">
+                Ingrediente: <strong id="ajusteNombre" style="color: var(--text-primary);"></strong>
+            </p>
+            <input type="number" id="ajusteCantidad" placeholder="Nueva cantidad" step="0.01">
+            <input type="text" id="ajusteMotivo" placeholder="Motivo del ajuste (ej: merma, pérdida)">
+            <div class="modal-buttons">
+                <button class="btn-modal btn-guardar" id="btnAplicarAjuste">Aplicar</button>
+                <button class="btn-modal btn-cerrar" id="btnCerrarModalAjustar">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Historial -->
+    <div id="modalHistorial" class="modal">
+        <div class="modal-content">
+            <h3>Historial de Movimientos</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 12px;">
+                Ingrediente: <strong id="historialNombre" style="color: var(--text-primary);"></strong>
+            </p>
+            <div id="historialContainer" class="historial-container">
+                <div style="color: var(--text-muted);">Cargando historial...</div>
+            </div>
+            <div class="modal-buttons" style="margin-top: 16px;">
+                <button class="btn-modal btn-cerrar" id="btnCerrarModalHistorial">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://lumire-erp-backend.onrender.com/api';
+        let token = localStorage.getItem('token');
+
+        // ========== FUNCIONES ==========
+
+        function getStockLevel(stock, minimo) {
+            if (stock <= 0) return { level: 'sin_stock', label: 'Sin stock', class: 'bajo' };
+            if (stock <= minimo) return { level: 'bajo', label: 'Stock bajo', class: 'bajo' };
+            if (stock <= minimo * 2) return { level: 'medio', label: 'Stock medio', class: 'medio' };
+            return { level: 'alto', label: 'Stock alto', class: 'alto' };
+        }
+
+        function getStockBadge(stock, minimo) {
+            const info = getStockLevel(stock, minimo);
+            return `<span class="badge-stock ${info.class}">${info.label}</span>`;
+        }
+
+        // ========== CARGAR INGREDIENTES ==========
+
+        async function cargarIngredientes() {
+            const container = document.getElementById('listaIngredientes');
+            container.innerHTML = '<div style="color: var(--text-muted);">Cargando ingredientes...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/ingredientes/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                // Actualizar resumen
+                document.getElementById('totalIngredientes').textContent = data.length;
+                const bajo = data.filter(i => i.stock_actual <= i.stock_minimo && i.stock_actual > 0).length;
+                const sinStock = data.filter(i => i.stock_actual <= 0).length;
+                document.getElementById('stockBajo').textContent = bajo;
+                document.getElementById('sinStock').textContent = sinStock;
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted);">No hay ingredientes registrados</div>';
+                    return;
+                }
+
+                let html = '';
+                data.forEach(ing => {
+                    const stockInfo = getStockLevel(ing.stock_actual, ing.stock_minimo);
+                    html += `
+                        <div class="ingrediente-card">
+                            <div>
+                                <span class="nombre">${ing.nombre}</span>
+                                <span class="unidad">(${ing.unidad || 'unidad'})</span>
+                                <br>
+                                <span class="stock ${stockInfo.class}">
+                                    ${ing.stock_actual || 0} ${ing.unidad || ''}
+                                </span>
+                                <span class="stock-minimo">Mínimo: ${ing.stock_minimo || 0}</span>
+                                ${getStockBadge(ing.stock_actual, ing.stock_minimo)}
+                            </div>
+                            <div class="ingrediente-acciones">
+                                <button class="btn-comprar" onclick="abrirModalComprar(${ing.id}, '${ing.nombre}')">
+                                    <i class="fas fa-shopping-cart"></i> Comprar
+                                </button>
+                                <button class="btn-ajustar" onclick="abrirModalAjustar(${ing.id}, '${ing.nombre}', ${ing.stock_actual || 0})">
+                                    <i class="fas fa-edit"></i> Ajustar
+                                </button>
+                                <button class="btn-editar-ing" onclick="editarIngrediente(${JSON.stringify(ing)})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn-eliminar-ing" onclick="eliminarIngrediente(${ing.id}, '${ing.nombre}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <button onclick="verHistorial(${ing.id}, '${ing.nombre}')" style="background: var(--accent-purple); color: white; border: none; border-radius: var(--radius-sm); padding: 6px 12px; cursor: pointer;">
+                                    <i class="fas fa-history"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = '<div style="color: var(--danger);">Error cargando ingredientes</div>';
+                console.error(e);
+            }
+        }
+
+        // ========== CREAR/EDITAR INGREDIENTE ==========
+
+        function abrirModalIngrediente(ingrediente = null) {
+            const modal = document.getElementById('modalIngrediente');
+            modal.classList.add('active');
+            if (ingrediente) {
+                document.getElementById('modalIngredienteTitulo').textContent = 'Editar Ingrediente';
+                document.getElementById('ingredienteId').value = ingrediente.id;
+                document.getElementById('ingNombre').value = ingrediente.nombre;
+                document.getElementById('ingUnidad').value = ingrediente.unidad || '';
+                document.getElementById('ingStockMinimo').value = ingrediente.stock_minimo || '';
+                document.getElementById('ingStockActual').value = ingrediente.stock_actual || '';
+            } else {
+                document.getElementById('modalIngredienteTitulo').textContent = 'Nuevo Ingrediente';
+                document.getElementById('ingredienteId').value = '';
+                document.getElementById('ingNombre').value = '';
+                document.getElementById('ingUnidad').value = '';
+                document.getElementById('ingStockMinimo').value = '';
+                document.getElementById('ingStockActual').value = '';
+            }
+        }
+
+        function cerrarModalIngrediente() {
+            document.getElementById('modalIngrediente').classList.remove('active');
+        }
+
+        function editarIngrediente(ing) {
+            abrirModalIngrediente(ing);
+        }
+
+        async function guardarIngrediente() {
+            const id = document.getElementById('ingredienteId').value;
+            const nombre = document.getElementById('ingNombre').value;
+            const unidad = document.getElementById('ingUnidad').value;
+            const stock_minimo = parseFloat(document.getElementById('ingStockMinimo').value) || 0;
+            const stock_actual = parseFloat(document.getElementById('ingStockActual').value) || 0;
+
+            if (!nombre) {
+                alert('El nombre es obligatorio');
+                return;
+            }
+
+            const data = {
+                nombre,
+                unidad: unidad || 'unidad',
+                stock_minimo,
+                stock_actual
+            };
+
+            const url = id ? `${API_URL}/ingredientes/${id}` : `${API_URL}/ingredientes/`;
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    alert(id ? 'Ingrediente actualizado' : 'Ingrediente creado');
+                    cerrarModalIngrediente();
+                    cargarIngredientes();
+                } else {
+                    const error = await res.json();
+                    alert('Error: ' + JSON.stringify(error));
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        }
+
+        async function eliminarIngrediente(id, nombre) {
+            if (!confirm(`¿Eliminar "${nombre}"?`)) return;
+            try {
+                const res = await fetch(`${API_URL}/ingredientes/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    alert('Ingrediente eliminado');
+                    cargarIngredientes();
+                } else {
+                    alert('Error al eliminar');
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        }
+
+        // ========== COMPRAR ==========
+
+        function abrirModalComprar(id, nombre) {
+            document.getElementById('compraIngredienteId').value = id;
+            document.getElementById('compraNombre').textContent = nombre;
+            document.getElementById('compraCantidad').value = '';
+            document.getElementById('compraCosto').value = '';
+            document.getElementById('modalComprar').classList.add('active');
+        }
+
+        async function registrarCompra() {
+            const id = document.getElementById('compraIngredienteId').value;
+            const cantidad = parseFloat(document.getElementById('compraCantidad').value);
+            const costo = parseFloat(document.getElementById('compraCosto').value) || 0;
+
+            if (!cantidad || cantidad <= 0) {
+                alert('Ingresa una cantidad válida');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/inventario/comprar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        ingrediente_id: parseInt(id),
+                        cantidad: cantidad,
+                        costo: costo
+                    })
+                });
+                if (res.ok) {
+                    alert('Compra registrada ✅');
+                    document.getElementById('modalComprar').classList.remove('active');
+                    cargarIngredientes();
+                } else {
+                    const error = await res.json();
+                    alert('Error: ' + JSON.stringify(error));
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        }
+
+        // ========== AJUSTAR STOCK ==========
+
+        function abrirModalAjustar(id, nombre, stockActual) {
+            document.getElementById('ajusteIngredienteId').value = id;
+            document.getElementById('ajusteNombre').textContent = nombre;
+            document.getElementById('ajusteCantidad').value = stockActual;
+            document.getElementById('ajusteMotivo').value = '';
+            document.getElementById('modalAjustar').classList.add('active');
+        }
+
+        async function aplicarAjuste() {
+            const id = document.getElementById('ajusteIngredienteId').value;
+            const cantidad = parseFloat(document.getElementById('ajusteCantidad').value);
+            const motivo = document.getElementById('ajusteMotivo').value || 'Ajuste manual';
+
+            if (isNaN(cantidad) || cantidad < 0) {
+                alert('Ingresa una cantidad válida');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/inventario/ajustar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        ingrediente_id: parseInt(id),
+                        nueva_cantidad: cantidad,
+                        motivo: motivo
+                    })
+                });
+                if (res.ok) {
+                    alert('Stock ajustado correctamente');
+                    document.getElementById('modalAjustar').classList.remove('active');
+                    cargarIngredientes();
+                } else {
+                    const error = await res.json();
+                    alert('Error: ' + JSON.stringify(error));
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        }
+
+        // ========== HISTORIAL ==========
+
+        async function verHistorial(id, nombre) {
+            document.getElementById('historialNombre').textContent = nombre;
+            document.getElementById('modalHistorial').classList.add('active');
+            const container = document.getElementById('historialContainer');
+            container.innerHTML = '<div style="color: var(--text-muted);">Cargando historial...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/inventario/historial/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted);">No hay movimientos registrados</div>';
+                    return;
+                }
+
+                let html = '';
+                data.forEach(m => {
+                    const tipoClass = m.tipo === 'compra' || m.tipo === 'ajuste_positivo' ? 'entrada' : 'salida';
+                    const signo = m.tipo === 'compra' || m.tipo === 'ajuste_positivo' ? '+' : '';
+                    html += `
+                        <div class="movimiento-item">
+                            <div>
+                                <strong>${m.tipo === 'compra' ? '🛒 Compra' : m.tipo === 'ajuste_positivo' ? '🔧 Ajuste (+)' : '🔧 Ajuste (-)'}</strong>
+                                <div class="fecha">${new Date(m.fecha).toLocaleDateString()} ${new Date(m.fecha).toLocaleTimeString()}</div>
+                                ${m.motivo ? `<div style="color: var(--text-muted); font-size: 0.8em;">${m.motivo}</div>` : ''}
+                            </div>
+                            <div class="cantidad ${tipoClass}">
+                                ${signo}${m.cantidad} ${m.unidad || ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = '<div style="color: var(--danger);">Error cargando historial</div>';
+                console.error(e);
+            }
+        }
+
+        // ========== EVENTOS ==========
+
+        document.getElementById('btnNuevoIngrediente')?.addEventListener('click', () => abrirModalIngrediente());
+
+        document.getElementById('btnCerrarModalIngrediente')?.addEventListener('click', cerrarModalIngrediente);
+
+        document.getElementById('btnGuardarIngrediente')?.addEventListener('click', guardarIngrediente);
+
+        document.getElementById('btnCerrarModalComprar')?.addEventListener('click', () => {
+            document.getElementById('modalComprar').classList.remove('active');
+        });
+
+        document.getElementById('btnRegistrarCompra')?.addEventListener('click', registrarCompra);
+
+        document.getElementById('btnCerrarModalAjustar')?.addEventListener('click', () => {
+            document.getElementById('modalAjustar').classList.remove('active');
+        });
+
+        document.getElementById('btnAplicarAjuste')?.addEventListener('click', aplicarAjuste);
+
+        document.getElementById('btnCerrarModalHistorial')?.addEventListener('click', () => {
+            document.getElementById('modalHistorial').classList.remove('active');
+        });
+
+        document.getElementById('logoutBtn')?.addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        });
+
+        // Cerrar modales al hacer clic fuera
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.remove('active');
+            });
+        });
+
+        // ========== INICIAR ==========
+
+        cargarIngredientes();
+    </script>
+</body>
+</html>
