@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>LUMIRE ERP - Nómina</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .empleado-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+        .empleado-card:hover {
+            border-color: var(--accent-purple);
+        }
+        .empleado-card .nombre {
+            font-weight: 600;
+        }
+        .empleado-card .rol {
+            color: var(--text-secondary);
+            font-size: 0.85em;
+        }
+        .empleado-card .salario {
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+        .empleado-acciones {
+            display: flex;
+            gap: 8px;
+        }
+        .empleado-acciones button {
+            padding: 6px 14px;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-asistencia {
+            background: var(--accent-purple);
+            color: white;
+        }
+        .btn-asistencia:hover { opacity: 0.8; }
+        .btn-nomina {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+        }
+        .btn-nomina:hover { opacity: 0.8; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 32px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-content h3 {
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        .modal-content input, .modal-content select {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            font-size: 0.95em;
+        }
+        .modal-content .btn-modal {
+            padding: 10px 24px;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .modal-content .btn-modal:hover { opacity: 0.8; }
+        .modal-content .btn-guardar {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+        }
+        .modal-content .btn-cerrar {
+            background: var(--danger);
+            color: white;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        .nomina-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9em;
+        }
+        .nomina-item .total {
+            font-weight: 600;
+            color: var(--accent-cyan);
+        }
+        .asistencia-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">LUMIRE <span>ERP</span></div>
+            <nav>
+                <a href="dashboard.html"><i class="fas fa-chart-pie"></i> Panel de Control</a>
+                <a href="ventas.html"><i class="fas fa-cash-register"></i> Punto de Venta</a>
+                <a href="productos.html"><i class="fas fa-boxes"></i> Productos</a>
+                <a href="recetas.html"><i class="fas fa-utensils"></i> Recetas</a>
+                <a href="inventario.html"><i class="fas fa-warehouse"></i> Inventario</a>
+                <a href="nomina.html" class="active"><i class="fas fa-coins"></i> Nómina</a>
+                <a href="usuarios.html"><i class="fas fa-users"></i> Usuarios</a>
+                <a href="#" id="logoutBtn" class="logout"><i class="fas fa-sign-out-alt"></i> Salir</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <h1><i class="fas fa-coins" style="color: var(--accent-purple);"></i> Nómina</h1>
+                <button id="btnNuevoEmpleado" class="btn-primary" style="width: auto; padding: 10px 20px; background: var(--success);">
+                    <i class="fas fa-user-plus"></i> Nuevo Empleado
+                </button>
+            </div>
+
+            <!-- Resumen rápido -->
+            <div class="cards-grid" style="margin-bottom: 24px;">
+                <div class="card">
+                    <div class="card-label">Empleados</div>
+                    <div class="card-value purple" id="totalEmpleados">0</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Nómina del mes</div>
+                    <div class="card-value cyan" id="nominaMes">$0</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Por pagar</div>
+                    <div class="card-value yellow" id="porPagar">$0</div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
+                <button class="btn-tab active" data-tab="empleados" style="background: var(--accent-purple); color: white; border: none; padding: 8px 20px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 500;">
+                    <i class="fas fa-users"></i> Empleados
+                </button>
+                <button class="btn-tab" data-tab="asistencias" style="background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 8px 20px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 500;">
+                    <i class="fas fa-clock"></i> Asistencias
+                </button>
+                <button class="btn-tab" data-tab="pagos" style="background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 8px 20px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 500;">
+                    <i class="fas fa-history"></i> Historial de Pagos
+                </button>
+            </div>
+
+            <!-- Tab: Empleados -->
+            <div id="tabEmpleados" class="tab-content">
+                <div class="card" style="padding: 20px;">
+                    <h3 style="font-size: 1em; margin-bottom: 16px; color: var(--text-secondary);">
+                        <i class="fas fa-list"></i> Empleados
+                    </h3>
+                    <div id="listaEmpleados">
+                        <div style="color: var(--text-muted);">Cargando empleados...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Asistencias -->
+            <div id="tabAsistencias" class="tab-content" style="display: none;">
+                <div class="card" style="padding: 20px;">
+                    <h3 style="font-size: 1em; margin-bottom: 16px; color: var(--text-secondary);">
+                        <i class="fas fa-calendar-check"></i> Asistencias
+                    </h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                        <input type="date" id="asistenciaFecha" style="padding: 10px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary);">
+                        <button id="btnCargarAsistencias" class="btn-primary" style="width: auto; padding: 10px 20px;">
+                            <i class="fas fa-search"></i> Cargar
+                        </button>
+                    </div>
+                    <div id="listaAsistencias">
+                        <div style="color: var(--text-muted);">Selecciona una fecha para ver asistencias</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Historial de Pagos -->
+            <div id="tabPagos" class="tab-content" style="display: none;">
+                <div class="card" style="padding: 20px;">
+                    <h3 style="font-size: 1em; margin-bottom: 16px; color: var(--text-secondary);">
+                        <i class="fas fa-file-invoice-dollar"></i> Historial de Pagos
+                    </h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                        <input type="month" id="pagosMes" style="padding: 10px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary);">
+                        <button id="btnCargarPagos" class="btn-primary" style="width: auto; padding: 10px 20px;">
+                            <i class="fas fa-search"></i> Cargar
+                        </button>
+                    </div>
+                    <div id="listaPagos">
+                        <div style="color: var(--text-muted);">Selecciona un mes para ver el historial de pagos</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal: Nuevo/Editar Empleado -->
+    <div id="modalEmpleado" class="modal">
+        <div class="modal-content">
+            <h3 id="modalEmpleadoTitulo">Nuevo Empleado</h3>
+            <input type="hidden" id="empleadoId">
+            <select id="empUsuarioId" style="width: 100%; padding: 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); margin-bottom: 12px;">
+                <option value="">Seleccionar usuario...</option>
+            </select>
+            <input type="text" id="empCargo" placeholder="Cargo (ej: Vendedor, Cocinero)">
+            <input type="number" id="empSalarioBase" placeholder="Salario base (CUP)" step="0.01">
+            <input type="number" id="empComision" placeholder="Comisión % (0-100)" step="0.01">
+            <input type="date" id="empFechaIngreso">
+            <div class="modal-buttons">
+                <button class="btn-modal btn-guardar" id="btnGuardarEmpleado">Guardar</button>
+                <button class="btn-modal btn-cerrar" id="btnCerrarModalEmpleado">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Registrar Asistencia -->
+    <div id="modalAsistencia" class="modal">
+        <div class="modal-content">
+            <h3>Registrar Asistencia</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 12px;">
+                Empleado: <strong id="asistenciaEmpleadoNombre" style="color: var(--text-primary);"></strong>
+            </p>
+            <input type="hidden" id="asistenciaEmpleadoId">
+            <input type="date" id="asistenciaFechaRegistro" value="">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <input type="time" id="asistenciaHoraEntrada" placeholder="Hora entrada">
+                <input type="time" id="asistenciaHoraSalida" placeholder="Hora salida">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-modal btn-guardar" id="btnGuardarAsistencia">Registrar</button>
+                <button class="btn-modal btn-cerrar" id="btnCerrarModalAsistencia">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Calcular Nómina -->
+    <div id="modalNomina" class="modal">
+        <div class="modal-content">
+            <h3>Calcular Nómina</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 12px;">
+                Empleado: <strong id="nominaEmpleadoNombre" style="color: var(--text-primary);"></strong>
+            </p>
+            <input type="hidden" id="nominaEmpleadoId">
+            <input type="month" id="nominaMesCalc" value="">
+            <div id="nominaDetalle" style="margin: 16px 0;">
+                <div style="color: var(--text-muted);">Cargando detalles...</div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-modal btn-guardar" id="btnCalcularNomina">Calcular</button>
+                <button class="btn-modal btn-cerrar" id="btnCerrarModalNomina">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://lumire-erp-backend.onrender.com/api';
+        let token = localStorage.getItem('token');
+        let usuariosLista = [];
+
+        // ========== TABS ==========
+
+        document.querySelectorAll('.btn-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.btn-tab').forEach(t => {
+                    t.style.background = 'var(--bg-card)';
+                    t.style.color = 'var(--text-secondary)';
+                    t.style.border = '1px solid var(--border-color)';
+                });
+                this.style.background = 'var(--accent-purple)';
+                this.style.color = 'white';
+                this.style.border = 'none';
+
+                const tabId = this.dataset.tab;
+                document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
+                if (tabId === 'empleados') document.getElementById('tabEmpleados').style.display = 'block';
+                else if (tabId === 'asistencias') document.getElementById('tabAsistencias').style.display = 'block';
+                else if (tabId === 'pagos') document.getElementById('tabPagos').style.display = 'block';
+
+                // Cargar datos según tab
+                if (tabId === 'empleados') cargarEmpleados();
+                else if (tabId === 'asistencias') cargarAsistencias();
+                else if (tabId === 'pagos') cargarPagos();
+            });
+        });
+
+        // ========== FUNCIONES ==========
+
+        async function cargarUsuariosSelect() {
+            try {
+                const res = await fetch(`${API_URL}/usuarios/public`);
+                const data = await res.json();
+                usuariosLista = data;
+                const select = document.getElementById('empUsuarioId');
+                select.innerHTML = '<option value="">Seleccionar usuario...</option>';
+                data.forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u.id;
+                    opt.textContent = `${u.nombre} (${u.email})`;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                console.error('Error cargando usuarios:', e);
+            }
+        }
+
+        // ========== EMPLEADOS ==========
+
+        async function cargarEmpleados() {
+            const container = document.getElementById('listaEmpleados');
+            container.innerHTML = '<div style="color: var(--text-muted);">Cargando empleados...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/empleados/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                document.getElementById('totalEmpleados').textContent = data.length;
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted);">No hay empleados registrados</div>';
+                    return;
+                }
+
+                let html = '';
+                data.forEach(emp => {
+                    const usuario = usuariosLista.find(u => u.id === emp.usuario_id);
+                    html += `
+                        <div class="empleado-card">
+                            <div>
+                                <span class="nombre">${usuario?.nombre || 'Usuario no encontrado'}</span>
+                                <span class="rol">${emp.tipo || 'Sin cargo'}</span>
+                                <br>
+                                <span class="salario">$${emp.salario_base || 0} CUP</span>
+                                ${emp.comision_porcentaje ? `<span style="color: var(--text-muted); font-size: 0.8em;"> | Comisión: ${emp.comision_porcentaje}%</span>` : ''}
+                            </div>
+                            <div class="empleado-acciones">
+                                <button class="btn-asistencia" onclick="abrirModalAsistencia(${emp.id}, '${usuario?.nombre || ''}')">
+                                    <i class="fas fa-clock"></i> Asistencia
+                                </button>
+                                <button class="btn-nomina" onclick="abrirModalNomina(${emp.id}, '${usuario?.nombre || ''}')">
+                                    <i class="fas fa-calculator"></i> Nómina
+                                </button>
+                                <button class="btn-editar-ing" onclick="editarEmpleado(${JSON.stringify(emp)})" style="background: var(--accent-blue); color: white; border: none; border-radius: var(--radius-sm); padding: 6px 14px; cursor: pointer;">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn-eliminar-ing" onclick="eliminarEmpleado(${emp.id})" style="background: var(--danger); color: white; border: none; border-radius: var(--radius-sm); padding: 6px 14px; cursor: pointer;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = '<div style="color: var(--danger);">Error cargando empleados</div>';
+                console.error(e);
+            }
+        }
+
+        function abrirModalEmpleado(empleado = null) {
+            const modal = document.getElementById('modalEmpleado');
+            modal.classList.add('active');
+            if (empleado) {
+                document.getElementById('modalEmpleadoTitulo').textContent = 'Editar Empleado';
+                document.getElementById('empleadoId').value = empleado.id;
+                document.getElementById('empUsuarioId').value = empleado.usuario_id;
+                document.getElementById('empCargo').value = empleado.tipo || '';
+                document.getElementById('empSalarioBase').value = empleado.salario_base || '';
+                document.getElementById('empComision').value = empleado.comision_porcentaje || '';
+                document.getElementById('empFechaIngreso').value = empleado.fecha_ingreso || '';
+            } else {
+                document.getElementById('modalEmpleadoTitulo').textContent = 'Nuevo Empleado';
+                document.getElementById('empleadoId').value = '';
+                document.getElementById('empUsuarioId').value = '';
+                document.getElementById('empCargo').value = '';
+                document.getElementById('empSalarioBase').value = '';
+                document.getElementById('empComision').value = '';
+                document.getElementById('empFechaIngreso').value = new Date().toISOString().split('T')[0];
+            }
+        }
+
+        function editarEmpleado(emp) {
+            abrirModalEmpleado(emp);
+        }
+
+        async function guardarEmpleado() {
+            const id = document.getElementById('empleadoId').value;
+            const usuario_id = document.getElementById('empUsuarioId').value;
+            const tipo = document.getElementById('empCargo').value;
+            const salario_base = parseFloat(document.getElementById('empSalarioBase').value) || 0;
+            const comision = parseFloat(document.getElementById('empComision').value) || 0;
+            const fecha_ingreso = document.getElementById('empFechaIngreso').value;
+
+            if (!usuario_id) {
+                alert('Selecciona un usuario');
+                return;
+            }
+
+            const data = {
+                usuario_id: parseInt(usuario_id),
+                tipo: tipo || 'Empleado',
+                salario_base: salario_base,
+                comision_porcentaje: comision,
+                fecha_ingreso: fecha_ingreso || new Date().toISOString().split('T')[0],
+                empresa_id: 1
+            };
+
+            const url = id ? `${API_URL}/empleados/${id}` : `${API_URL}/empleados/`;
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    alert(id ? 'Empleado actualizado' : 'Empleado creado');
+                    document.getElementById('modalEmpleado').classList.remove('active');
+                    cargarEmpleados();
+                } else {
+                    const error = await res.json();
+                    alert('Error: ' + JSON.stringify(error));
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        }
+
+        async function eliminarEmpleado(id) {
+            if (!confirm('¿Eliminar este empleado?')) return;
+            try {
+                const res = await fetch(`${API_URL}/empleados/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    alert('Empleado eliminado');
+                    cargarEmpleados();
+                } else {
+                    alert('Error al eliminar');
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        }
+
+        // ========== ASISTENCIAS ==========
+
+        document.getElementById('btnCargarAsistencias')?.addEventListener('click', cargarAsistencias);
+
+        async function cargarAsistencias() {
+            const fecha = document.getElementById('asistenciaFecha').value;
+            if (!fecha) {
+                alert('Selecciona una fecha');
+                return;
+            }
+
+            const container = document.getElementById('listaAsistencias');
+            container.innerHTML = '<div style="color: var(--text-muted);">Cargando asistencias...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/asistencias/?fecha=${fecha}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted);">No hay asistencias para esta fecha</div>';
+                    return;
+                }
+
+                let html = '';
+                data.forEach(a => {
+                    const empleado = a.empleados || {};
+                    html += `
+                        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                            <span>${empleado.nombre || 'Empleado #' + a.empleado_id}</span>
+                            <span>Entrada: ${a.hora_entrada || '--:--'} | Salida: ${a.hora_salida || '--:--'}</span>
+                            <span>${a.horas_trabajadas || 0}h</span>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = '<div style="color: var(--danger);">Error cargando asistencias</div>';
+                console.error(e);
+            }
+        }
+
+        function abrirModalAsistencia(empleadoId, nombre) {
+            document.getElementById('asistenciaEmpleadoId').value = empleadoId;
+            document.getElementById('asistenciaEmpleadoNombre').textContent = nombre;
+            document.getElementById('asistenciaFechaRegistro').value = new Date().toISOString().split('T')[0];
+            document.getElementById('asistenciaHoraEntrada').value = '';
+            document.getElementById('asistenciaHoraSalida').value = '';
+            document.getElementById('modalAsistencia').classList.add('active');
+        }
+
+        async function guardarAsistencia() {
+            const empleado_id = document.getElementById('asistenciaEmpleadoId').value;
+            const fecha = document.getElementById('asistenciaFechaRegistro').value;
+            const hora_entrada = document.getElementById('asistenciaHoraEntrada').value;
+            const hora_salida = document.getElementById('asistenciaHoraSalida').value;
+
+            if (!empleado_id || !fecha || !hora_entrada || !hora_salida) {
+                alert('Completa todos los campos');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/asistencias/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        empleado_id: parseInt(empleado_id),
+                        fecha: fecha,
+                        hora_entrada: hora_entrada,
+                        hora_salida: hora_salida
+                    })
+                });
+                if (res.ok) {
+                    alert('Asistencia registrada ✅');
+                    document.getElementById('modalAsistencia').classList.remove('active');
+                    cargarAsistencias();
+                } else {
+                    const error = await res.json();
+                    alert('Error: ' + JSON.stringify(error));
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        }
+
+        // ========== NÓMINA ==========
+
+        function abrirModalNomina(empleadoId, nombre) {
+            document.getElementById('nominaEmpleadoId').value = empleadoId;
+            document.getElementById('nominaEmpleadoNombre').textContent = nombre;
+            document.getElementById('nominaMesCalc').value = new Date().toISOString().slice(0, 7);
+            document.getElementById('nominaDetalle').innerHTML = '<div style="color: var(--text-muted);">Selecciona el mes y haz clic en Calcular</div>';
+            document.getElementById('modalNomina').classList.add('active');
+        }
+
+        async function calcularNomina() {
+            const empleado_id = document.getElementById('nominaEmpleadoId').value;
+            const mes = document.getElementById('nominaMesCalc').value;
+            const detalle = document.getElementById('nominaDetalle');
+
+            if (!empleado_id || !mes) {
+                alert('Selecciona un empleado y un mes');
+                return;
+            }
+
+            detalle.innerHTML = '<div style="color: var(--text-muted);">Calculando...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/nomina/calcular?empleado_id=${empleado_id}&mes=${mes}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (data.error) {
+                    detalle.innerHTML = `<div style="color: var(--danger);">${data.error}</div>`;
+                    return;
+                }
+
+                let html = `
+                    <div style="background: var(--bg-primary); padding: 16px; border-radius: var(--radius-sm);">
+                        <div class="nomina-item"><span>Salario base</span><span>$${data.salario_base}</span></div>
+                        <div class="nomina-item"><span>Comisiones</span><span>$${data.comisiones}</span></div>
+                        <div class="nomina-item"><span>Bonos</span><span>$${data.bonos}</span></div>
+                        <div class="nomina-item" style="border-bottom: 2px solid var(--border-color);"><span>Deducciones</span><span>-$${data.deducciones}</span></div>
+                        <div class="nomina-item" style="font-size: 1.2em;"><span><strong>Total a pagar</strong></span><span class="total">$${data.total}</span></div>
+                    </div>
+                    <div style="margin-top: 12px;">
+                        <button id="btnGenerarRecibo" class="btn-primary" style="width: 100%;">
+                            <i class="fas fa-file-pdf"></i> Generar Recibo
+                        </button>
+                    </div>
+                `;
+                detalle.innerHTML = html;
+
+                document.getElementById('btnGenerarRecibo')?.addEventListener('click', () => {
+                    alert('📄 Recibo generado (exportar a PDF pronto)');
+                });
+
+            } catch (e) {
+                detalle.innerHTML = '<div style="color: var(--danger);">Error calculando nómina</div>';
+                console.error(e);
+            }
+        }
+
+        // ========== HISTORIAL DE PAGOS ==========
+
+        document.getElementById('btnCargarPagos')?.addEventListener('click', cargarPagos);
+
+        async function cargarPagos() {
+            const mes = document.getElementById('pagosMes').value;
+            if (!mes) {
+                alert('Selecciona un mes');
+                return;
+            }
+
+            const container = document.getElementById('listaPagos');
+            container.innerHTML = '<div style="color: var(--text-muted);">Cargando pagos...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/nomina/historial?mes=${mes}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted);">No hay pagos para este mes</div>';
+                    return;
+                }
+
+                let html = '';
+                data.forEach(p => {
+                    html += `
+                        <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-color);">
+                            <div>
+                                <strong>${p.empleado_nombre || 'Empleado'}</strong>
+                                <div style="color: var(--text-muted); font-size: 0.85em;">${p.fecha}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <span class="total">$${p.total}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+
+                // Actualizar resumen
+                const totalMes = data.reduce((sum, p) => sum + p.total, 0);
+                document.getElementById('nominaMes').textContent = `$${totalMes}`;
+                document.getElementById('porPagar').textContent = `$${totalMes}`;
+
+            } catch (e) {
+                container.innerHTML = '<div style="color: var(--danger);">Error cargando pagos</div>';
+                console.error(e);
+            }
+        }
+
+        // ========== EVENTOS ==========
+
+        document.getElementById('btnNuevoEmpleado')?.addEventListener('click', abrirModalEmpleado);
+
+        document.getElementById('btnCerrarModalEmpleado')?.addEventListener('click', () => {
+            document.getElementById('modalEmpleado').classList.remove('active');
+        });
+
+        document.getElementById('btnGuardarEmpleado')?.addEventListener('click', guardarEmpleado);
+
+        document.getElementById('btnCerrarModalAsistencia')?.addEventListener('click', () => {
+            document.getElementById('modalAsistencia').classList.remove('active');
+        });
+
+        document.getElementById('btnGuardarAsistencia')?.addEventListener('click', guardarAsistencia);
+
+        document.getElementById('btnCerrarModalNomina')?.addEventListener('click', () => {
+            document.getElementById('modalNomina').classList.remove('active');
+        });
+
+        document.getElementById('btnCalcularNomina')?.addEventListener('click', calcularNomina);
+
+        document.getElementById('logoutBtn')?.addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        });
+
+        // Cerrar modales al hacer clic fuera
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.remove('active');
+            });
+        });
+
+        // ========== INICIAR ==========
+
+        async function init() {
+            await cargarUsuariosSelect();
+            await cargarEmpleados();
+        }
+
+        init();
+    </script>
+</body>
+</html>
