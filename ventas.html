@@ -2,43 +2,76 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>LUMIRE ERP - Punto de Venta</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="dashboard-container">
-        <div class="sidebar">
-            <h2>LUMIRE ERP</h2>
+        <aside class="sidebar">
+            <div class="logo">LUMIRE <span>ERP</span></div>
             <nav>
-                <a href="dashboard.html">📊 Dashboard</a>
-                <a href="ventas.html">💰 Punto de Venta</a>
-                <a href="productos.html">📦 Productos</a>
-                <a href="ventas.html#historial">📋 Historial de Ventas</a>
-                <a href="usuarios.html">👥 Usuarios</a>
-                <a href="#" id="logoutBtn" style="background:#e53e3e;">🚪 Salir</a>
+                <a href="dashboard.html">
+                    <i class="fas fa-chart-pie"></i> Dashboard
+                </a>
+                <a href="ventas.html" class="active">
+                    <i class="fas fa-cash-register"></i> Punto de Venta
+                </a>
+                <a href="productos.html">
+                    <i class="fas fa-boxes"></i> Productos
+                </a>
+                <a href="usuarios.html">
+                    <i class="fas fa-users"></i> Usuarios
+                </a>
+                <a href="#" id="logoutBtn" class="logout">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </a>
             </nav>
-        </div>
-        <div class="main-content">
+        </aside>
+
+        <main class="main-content">
             <div class="top-bar">
-                <h1>Punto de Venta</h1>
+                <h1><i class="fas fa-cash-register" style="color: var(--accent-cyan);"></i> Punto de Venta</h1>
+                <div class="user-info">
+                    <div class="avatar">A</div>
+                </div>
             </div>
+
             <div class="ventas-panel">
-                <div class="productos-lista">
-                    <h3>Productos</h3>
-                    <div id="productosContainer"></div>
-                </div>
-                <div class="carrito">
-                    <h3>Carrito</h3>
-                    <div id="carritoItems"></div>
-                    <div class="carrito-total">
-                        Total: <span id="carritoTotal">$0</span>
+                <!-- Productos -->
+                <div class="card" style="padding: 20px;">
+                    <h3 style="font-size: 1em; margin-bottom: 16px; color: var(--text-secondary);">
+                        <i class="fas fa-box" style="color: var(--accent-purple);"></i> Productos
+                    </h3>
+                    <div class="productos-grid" id="productosContainer">
+                        <!-- Productos cargados dinámicamente -->
                     </div>
-                    <button id="pagarBtn" class="pagar-btn">💵 Cobrar</button>
+                </div>
+
+                <!-- Carrito -->
+                <div class="carrito">
+                    <div class="carrito-header">
+                        <h3 style="font-size: 1em; color: var(--text-secondary);">
+                            <i class="fas fa-shopping-cart" style="color: var(--warning);"></i> Carrito
+                        </h3>
+                        <span style="color: var(--text-muted); font-size: 0.8em;" id="carritoCount">0 items</span>
+                    </div>
+                    <div class="carrito-items" id="carritoItems">
+                        <!-- Items del carrito -->
+                    </div>
+                    <div class="carrito-total">
+                        <span>Total</span>
+                        <span class="cyan" id="carritoTotal">$0</span>
+                    </div>
+                    <button class="btn-primary" id="pagarBtn" style="margin-top: 16px;">
+                        <i class="fas fa-credit-card"></i> Cobrar
+                    </button>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>

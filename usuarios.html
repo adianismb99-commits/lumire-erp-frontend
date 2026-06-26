@@ -5,23 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>LUMIRE ERP - Usuarios</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .campo-error {
-            border-color: #e53e3e !important;
-            background-color: #fff5f5;
+            border-color: var(--danger) !important;
         }
         .mensaje-error {
-            color: #e53e3e;
-            font-size: 0.85em;
-            margin-top: -5px;
-            margin-bottom: 10px;
+            color: var(--danger);
+            font-size: 0.8em;
+            margin-top: 4px;
             display: none;
         }
         .mensaje-error.visible {
             display: block;
-        }
-        .form-group {
-            margin-bottom: 10px;
         }
         .pass-group {
             position: relative;
@@ -29,267 +25,325 @@
         }
         .pass-group input {
             width: 100%;
-            padding: 10px 45px 10px 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-sizing: border-box;
+            padding: 12px 45px 12px 16px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 0.95em;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+        }
+        .pass-group input:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
         }
         .pass-group .toggle-btn {
             position: absolute;
-            right: 10px;
+            right: 14px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
-            font-size: 1.2em;
+            color: var(--text-muted);
+            font-size: 1.1em;
             cursor: pointer;
-            padding: 5px;
-            color: #667eea;
-            pointer-events: auto;
+            padding: 4px;
+            transition: color 0.2s;
         }
         .pass-group .toggle-btn:hover {
-            opacity: 0.7;
+            color: var(--text-primary);
         }
-        .btn-cambiar-pass {
-            background: #ed8936;
-            color: white;
+        .usuario-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 12px;
+            transition: background 0.2s;
+            border-radius: var(--radius-sm);
+        }
+        .usuario-card:hover {
+            background: var(--bg-card-hover);
+        }
+        .usuario-email {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+        .usuario-rol {
+            color: var(--accent-cyan);
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        .usuario-acciones {
+            display: flex;
+            gap: 8px;
+        }
+        .usuario-acciones button {
+            padding: 6px 14px;
             border: none;
-            border-radius: 5px;
-            padding: 5px 12px;
+            border-radius: var(--radius-sm);
             cursor: pointer;
             font-size: 0.8em;
-            margin-top: 5px;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-editar {
+            background: var(--accent-blue);
+            color: white;
+        }
+        .btn-editar:hover {
+            opacity: 0.8;
+            transform: translateY(-1px);
+        }
+        .btn-eliminar {
+            background: var(--danger);
+            color: white;
+        }
+        .btn-eliminar:hover {
+            opacity: 0.8;
+            transform: translateY(-1px);
+        }
+        .btn-cambiar-pass {
+            background: var(--warning);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: 500;
+            transition: all 0.2s;
         }
         .btn-cambiar-pass:hover {
-            background: #dd6b20;
+            opacity: 0.8;
         }
         .campo-pass-antigua {
             display: none;
-            margin-top: 10px;
-            padding: 10px;
-            background: #f7fafc;
-            border-radius: 5px;
+            margin-top: 12px;
+            padding: 16px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
         }
         .campo-pass-antigua.visible {
             display: block;
-        }
-        /* Evitar que el botón del ojo robe el foco */
-        .pass-group .toggle-btn:focus {
-            outline: none;
         }
     </style>
 </head>
 <body>
     <div class="dashboard-container">
-        <div class="sidebar">
-            <h2>LUMIRE ERP</h2>
+        <aside class="sidebar">
+            <div class="logo">LUMIRE <span>ERP</span></div>
             <nav>
-                <a href="dashboard.html">📊 Dashboard</a>
-                <a href="ventas.html">💰 Punto de Venta</a>
-                <a href="productos.html">📦 Productos</a>
-                <a href="usuarios.html">👥 Usuarios</a>
-                <a href="#" id="logoutBtn" style="background:#e53e3e;">🚪 Salir</a>
+                <a href="dashboard.html"><i class="fas fa-chart-pie"></i> Dashboard</a>
+                <a href="ventas.html"><i class="fas fa-cash-register"></i> Punto de Venta</a>
+                <a href="productos.html"><i class="fas fa-boxes"></i> Productos</a>
+                <a href="usuarios.html" class="active"><i class="fas fa-users"></i> Usuarios</a>
+                <a href="#" id="logoutBtn" class="logout"><i class="fas fa-sign-out-alt"></i> Salir</a>
             </nav>
-        </div>
-        <div class="main-content">
+        </aside>
+
+        <main class="main-content">
             <div class="top-bar">
-                <h1>👥 Usuarios del Sistema</h1>
-                <button id="btnNuevoUsuario" style="background:#48bb78; width:auto; padding:10px 20px;">+ Nuevo Usuario</button>
+                <h1><i class="fas fa-users" style="color: var(--accent-purple);"></i> Usuarios del Sistema</h1>
+                <button id="btnNuevoUsuario" class="btn-primary" style="width: auto; padding: 10px 20px; background: var(--success);">
+                    <i class="fas fa-user-plus"></i> Nuevo Usuario
+                </button>
             </div>
-            
+
             <!-- Formulario -->
-            <div id="formUsuario" style="display:none; background:white; padding:20px; border-radius:10px; margin-bottom:20px;">
-                <h3 id="formTitulo">Crear Usuario</h3>
+            <div id="formUsuario" style="display: none; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 24px; margin-bottom: 24px;">
+                <h3 style="margin-bottom: 16px; color: var(--text-secondary);">
+                    <i class="fas fa-edit"></i> <span id="formTitulo">Crear Usuario</span>
+                </h3>
                 <input type="hidden" id="userId">
                 <input type="hidden" id="editando" value="false">
-                
-                <div class="form-group">
-                    <input type="text" id="userNombre" placeholder="Nombre completo" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">
-                </div>
-                
-                <div class="form-group">
-                    <input type="email" id="userEmail" placeholder="Email" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">
-                    <div id="emailError" class="mensaje-error">❌ Email inválido</div>
-                </div>
-                
-                <!-- Campo contraseña para NUEVO usuario -->
-                <div id="campoPassNuevo" class="form-group">
-                    <div class="pass-group">
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <input type="text" id="userNombre" placeholder="Nombre completo" style="grid-column: 1 / -1; padding: 12px 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.95em;">
+                    
+                    <input type="email" id="userEmail" placeholder="Email" style="grid-column: 1 / -1; padding: 12px 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.95em;">
+                    <div id="emailError" class="mensaje-error" style="grid-column: 1 / -1;">❌ Email inválido</div>
+
+                    <div class="pass-group" style="grid-column: 1 / -1;">
                         <input type="password" id="userPassword" placeholder="Contraseña (mínimo 6 caracteres)">
-                        <button type="button" class="toggle-btn" data-target="userPassword" onclick="togglePass(this)">👁️</button>
+                        <button type="button" class="toggle-btn" onclick="togglePass('userPassword', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <div id="passError" class="mensaje-error">❌ La contraseña debe tener al menos 6 caracteres</div>
                     </div>
-                    <div id="passError" class="mensaje-error">❌ La contraseña debe tener al menos 6 caracteres</div>
-                </div>
-                
-                <div id="campoPassRepetir" class="form-group">
-                    <div class="pass-group">
+
+                    <div class="pass-group" style="grid-column: 1 / -1;">
                         <input type="password" id="userPassword2" placeholder="Repetir contraseña">
-                        <button type="button" class="toggle-btn" data-target="userPassword2" onclick="togglePass(this)">👁️</button>
+                        <button type="button" class="toggle-btn" onclick="togglePass('userPassword2', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <div id="passMatchError" class="mensaje-error">❌ Las contraseñas no coinciden</div>
                     </div>
-                    <div id="passMatchError" class="mensaje-error">❌ Las contraseñas no coinciden</div>
                 </div>
-                
-                <!-- Campos para CAMBIAR contraseña en edición -->
-                <div id="campoCambioPass" style="display:none; background:#f7fafc; padding:15px; border-radius:5px; margin-bottom:10px;">
-                    <h4>Cambiar Contraseña</h4>
-                    
-                    <div class="form-group">
-                        <div class="pass-group">
-                            <input type="password" id="passAntigua" placeholder="Contraseña actual">
-                            <button type="button" class="toggle-btn" data-target="passAntigua" onclick="togglePass(this)">👁️</button>
-                        </div>
+
+                <!-- Cambiar contraseña (edición) -->
+                <div id="campoCambioPass" style="display: none; margin-top: 16px; padding: 16px; background: var(--bg-primary); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                    <h4 style="color: var(--text-secondary); margin-bottom: 12px;">
+                        <i class="fas fa-key" style="color: var(--warning);"></i> Cambiar Contraseña
+                    </h4>
+                    <div class="pass-group" style="margin-bottom: 10px;">
+                        <input type="password" id="passAntigua" placeholder="Contraseña actual">
+                        <button type="button" class="toggle-btn" onclick="togglePass('passAntigua', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </div>
-                    
-                    <div class="form-group">
-                        <div class="pass-group">
-                            <input type="password" id="passNueva" placeholder="Nueva contraseña (mínimo 6 caracteres)">
-                            <button type="button" class="toggle-btn" data-target="passNueva" onclick="togglePass(this)">👁️</button>
-                        </div>
+                    <div class="pass-group" style="margin-bottom: 10px;">
+                        <input type="password" id="passNueva" placeholder="Nueva contraseña (mínimo 6 caracteres)">
+                        <button type="button" class="toggle-btn" onclick="togglePass('passNueva', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </div>
-                    
-                    <div class="form-group">
-                        <div class="pass-group">
-                            <input type="password" id="passNueva2" placeholder="Repetir nueva contraseña">
-                            <button type="button" class="toggle-btn" data-target="passNueva2" onclick="togglePass(this)">👁️</button>
-                        </div>
+                    <div class="pass-group">
+                        <input type="password" id="passNueva2" placeholder="Repetir nueva contraseña">
+                        <button type="button" class="toggle-btn" onclick="togglePass('passNueva2', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
                         <div id="passNuevaError" class="mensaje-error">❌ Las contraseñas no coinciden</div>
                     </div>
-                    
-                    <button id="btnAplicarCambioPass" style="background:#ed8936; width:auto; padding:8px 16px; margin-top:10px;">✅ Aplicar cambio</button>
-                    <button id="btnCancelarCambioPass" style="background:#718096; width:auto; padding:8px 16px; margin-top:10px;">❌ Cancelar</button>
+                    <div style="display: flex; gap: 12px; margin-top: 12px;">
+                        <button id="btnAplicarCambioPass" class="btn-primary" style="background: var(--warning); color: var(--bg-primary); flex: 1;">
+                            <i class="fas fa-check"></i> Aplicar cambio
+                        </button>
+                        <button id="btnCancelarCambioPass" class="btn-primary" style="background: var(--danger); flex: 1;">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </div>
                 </div>
-                
-                <div style="margin-bottom:10px;">
-                    <button id="btnMostrarCambioPass" class="btn-cambiar-pass" style="display:none;">🔑 Cambiar contraseña</button>
+
+                <div style="margin: 12px 0;">
+                    <button id="btnMostrarCambioPass" class="btn-cambiar-pass">
+                        <i class="fas fa-key"></i> Cambiar contraseña
+                    </button>
                 </div>
-                
-                <div class="form-group">
-                    <select id="userRol" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">
+
+                <div style="margin: 12px 0;">
+                    <label style="color: var(--text-secondary); font-size: 0.85em; display: block; margin-bottom: 4px;">Rol</label>
+                    <select id="userRol" style="width: 100%; padding: 12px 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.95em;">
                         <option value="1">ADMIN</option>
                         <option value="2" selected>VENDEDOR</option>
                         <option value="3">CAJERO</option>
                         <option value="4">GERENTE</option>
                     </select>
                 </div>
-                
-                <div style="display:flex; gap:10px;">
-                    <button id="btnGuardar" style="flex:1; background:#667eea;">💾 Guardar</button>
-                    <button id="btnCancelar" style="flex:1; background:#718096;">❌ Cancelar</button>
+
+                <div style="display: flex; gap: 12px; margin-top: 16px;">
+                    <button id="btnGuardar" class="btn-primary" style="flex: 1;">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                    <button id="btnCancelar" class="btn-primary" style="flex: 1; background: var(--danger);">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
                 </div>
             </div>
-            
-            <!-- Lista -->
-            <div id="listaUsuarios" style="background:white; border-radius:10px; padding:20px;">
-                Cargando usuarios...
+
+            <!-- Lista de usuarios -->
+            <div class="card" style="padding: 20px;">
+                <h3 style="font-size: 1em; margin-bottom: 16px; color: var(--text-secondary);">
+                    <i class="fas fa-list"></i> Lista de Usuarios
+                </h3>
+                <div id="listaUsuarios">
+                    <div style="color: var(--text-muted);">Cargando usuarios...</div>
+                </div>
             </div>
-        </div>
+        </main>
     </div>
-    
+
     <script>
         const API_URL = 'https://lumire-erp-backend.onrender.com/api';
         let token = localStorage.getItem('token');
-        
-        // ========== FUNCIÓN TOGGLE PASSWORD MEJORADA ==========
-        function togglePass(btn) {
-            const targetId = btn.getAttribute('data-target');
-            const input = document.getElementById(targetId);
+
+        // ========== TOGGLE PASSWORD ==========
+        function togglePass(inputId, btn) {
+            const input = document.getElementById(inputId);
             if (!input) return;
-            
-            // Cambiar el tipo
+            const icon = btn.querySelector('i');
             if (input.type === 'password') {
                 input.type = 'text';
-                btn.textContent = '🙈';
+                icon.className = 'fas fa-eye-slash';
             } else {
                 input.type = 'password';
-                btn.textContent = '👁️';
+                icon.className = 'fas fa-eye';
             }
-            
-            // Poner el foco en el input y NO en el botón
             input.focus();
-            
-            // Mover el cursor al final del texto
-            const length = input.value.length;
-            input.setSelectionRange(length, length);
-            
-            // Prevenir cualquier acción adicional
-            event.preventDefault();
-            event.stopPropagation();
         }
-        
+
+        // ========== VALIDACIONES ==========
         function validarEmail(email) {
             return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
         }
-        
+
         function validarContraseña(pass) {
             return pass.length >= 6;
         }
-        
+
         function getRol(id) {
-            const roles = {
-                1: 'ADMIN',
-                2: 'VENDEDOR',
-                3: 'CAJERO',
-                4: 'GERENTE'
-            };
+            const roles = {1: 'ADMIN', 2: 'VENDEDOR', 3: 'CAJERO', 4: 'GERENTE'};
             return roles[id] || 'SIN ROL';
         }
-        
+
         function limpiarErrores() {
             document.querySelectorAll('.campo-error').forEach(el => el.classList.remove('campo-error'));
             document.querySelectorAll('.mensaje-error').forEach(el => el.classList.remove('visible'));
         }
-        
+
         // ========== VALIDACIONES EN TIEMPO REAL ==========
         document.getElementById('userEmail')?.addEventListener('input', function() {
-            const email = this.value;
-            const errorDiv = document.getElementById('emailError');
-            if (email && !validarEmail(email)) {
+            const error = document.getElementById('emailError');
+            if (this.value && !validarEmail(this.value)) {
                 this.classList.add('campo-error');
-                errorDiv.classList.add('visible');
+                error.classList.add('visible');
             } else {
                 this.classList.remove('campo-error');
-                errorDiv.classList.remove('visible');
+                error.classList.remove('visible');
             }
         });
-        
+
         document.getElementById('userPassword')?.addEventListener('input', function() {
-            const pass = this.value;
-            const errorDiv = document.getElementById('passError');
-            if (pass && !validarContraseña(pass)) {
+            const error = document.getElementById('passError');
+            if (this.value && !validarContraseña(this.value)) {
                 this.classList.add('campo-error');
-                errorDiv.classList.add('visible');
+                error.classList.add('visible');
             } else {
                 this.classList.remove('campo-error');
-                errorDiv.classList.remove('visible');
+                error.classList.remove('visible');
             }
         });
-        
+
         document.getElementById('userPassword2')?.addEventListener('input', function() {
             const pass1 = document.getElementById('userPassword').value;
-            const pass2 = this.value;
-            const errorDiv = document.getElementById('passMatchError');
-            if (pass2 && pass1 !== pass2) {
+            const error = document.getElementById('passMatchError');
+            if (this.value && pass1 !== this.value) {
                 this.classList.add('campo-error');
-                errorDiv.classList.add('visible');
+                error.classList.add('visible');
             } else {
                 this.classList.remove('campo-error');
-                errorDiv.classList.remove('visible');
+                error.classList.remove('visible');
             }
         });
-        
+
         document.getElementById('passNueva2')?.addEventListener('input', function() {
             const pass1 = document.getElementById('passNueva').value;
-            const pass2 = this.value;
-            const errorDiv = document.getElementById('passNuevaError');
-            if (pass2 && pass1 !== pass2) {
+            const error = document.getElementById('passNuevaError');
+            if (this.value && pass1 !== this.value) {
                 this.classList.add('campo-error');
-                errorDiv.classList.add('visible');
+                error.classList.add('visible');
             } else {
                 this.classList.remove('campo-error');
-                errorDiv.classList.remove('visible');
+                error.classList.remove('visible');
             }
         });
-        
+
         // ========== MOSTRAR/OCULTAR CAMPOS ==========
         function mostrarCamposSegunModo(editando) {
             const esNuevo = !editando;
@@ -298,7 +352,7 @@
             document.getElementById('btnMostrarCambioPass').style.display = editando ? 'inline-block' : 'none';
             document.getElementById('campoCambioPass').style.display = 'none';
             document.getElementById('editando').value = editando ? 'true' : 'false';
-            
+
             if (esNuevo) {
                 document.getElementById('userPassword').value = '';
                 document.getElementById('userPassword2').value = '';
@@ -309,74 +363,62 @@
             }
             limpiarErrores();
         }
-        
+
         // ========== CERRAR SESIÓN ==========
         document.getElementById('logoutBtn')?.addEventListener('click', () => {
             localStorage.removeItem('token');
             window.location.href = 'index.html';
         });
-        
+
         // ========== CARGAR USUARIOS ==========
         async function cargarUsuarios() {
             const container = document.getElementById('listaUsuarios');
-            container.innerHTML = 'Cargando usuarios...';
-    
-            try {
-                // Obtener token del localStorage
-                const token = localStorage.getItem('token');
-                if (!token) {
-                    container.innerHTML = 'No has iniciado sesión. <a href="index.html">Iniciar sesión</a>';
-                    return;
-                }
+            container.innerHTML = '<div style="color: var(--text-muted);">Cargando usuarios...</div>';
 
+            try {
                 const res = await fetch(`${API_URL}/usuarios/public`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Accept': 'application/json'
                     }
                 });
-        
-                if (!res.ok) {
-                    throw new Error(`HTTP ${res.status} - ${res.statusText}`);
-                }
-        
+
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
                 const usuarios = await res.json();
-        
-                // Asegurar que sea un array
-                if (!Array.isArray(usuarios)) {
-                    console.error('La respuesta no es un array:', usuarios);
-                    container.innerHTML = 'Error: formato de datos incorrecto';
+
+                if (!Array.isArray(usuarios) || usuarios.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted);">No hay usuarios registrados</div>';
                     return;
                 }
-        
-                if (usuarios.length === 0) {
-                    container.innerHTML = 'No hay usuarios registrados';
-                    return;
-                }
-        
+
                 let html = '';
                 usuarios.forEach(u => {
                     html += `
-                        <div style="border-bottom:1px solid #ddd; padding:15px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <div class="usuario-card">
                             <div>
-                                <strong>${u.nombre || 'Sin nombre'}</strong><br>
-                                <small>${u.email || 'Sin email'}</small><br>
-                                <small>Rol: ${getRol(u.rol_id)}</small>
+                                <strong style="color: var(--text-primary);">${u.nombre || 'Sin nombre'}</strong><br>
+                                <span class="usuario-email">${u.email || 'Sin email'}</span><br>
+                                <span class="usuario-rol">${getRol(u.rol_id)}</span>
                             </div>
-                            <div style="display:flex; gap:10px;">
-                                <button onclick='editarUsuario(${JSON.stringify(u)})' style="padding:8px 16px; background:#4299e1; border:none; border-radius:5px; color:white;">✏️ Editar</button>
-                                <button onclick='eliminarUsuario(${u.id}, "${u.nombre || ''}")' style="padding:8px 16px; background:#e53e3e; border:none; border-radius:5px; color:white;">🗑️ Eliminar</button>
+                            <div class="usuario-acciones">
+                                <button class="btn-editar" onclick='editarUsuario(${JSON.stringify(u)})'>
+                                    <i class="fas fa-edit"></i> Editar
+                                </button>
+                                <button class="btn-eliminar" onclick='eliminarUsuario(${u.id}, "${u.nombre || ''}")'>
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </button>
                             </div>
                         </div>
                     `;
                 });
                 container.innerHTML = html;
-            } catch(e) {
+            } catch (e) {
                 console.error('Error:', e);
-                container.innerHTML = 'Error al cargar usuarios. <button onclick="cargarUsuarios()">Reintentar</button>';
+                container.innerHTML = `<div style="color: var(--danger);">Error al cargar usuarios. <button onclick="cargarUsuarios()" style="background: var(--accent-blue); color: white; border: none; padding: 6px 16px; border-radius: var(--radius-sm); cursor: pointer;">Reintentar</button></div>`;
             }
         }
-        
+
         // ========== EDITAR ==========
         function editarUsuario(user) {
             document.getElementById('userId').value = user.id;
@@ -388,7 +430,7 @@
             mostrarCamposSegunModo(true);
             document.getElementById('userNombre').focus();
         }
-        
+
         // ========== ELIMINAR ==========
         async function eliminarUsuario(id, nombre) {
             if (!confirm(`¿Eliminar a ${nombre}?`)) return;
@@ -403,11 +445,11 @@
                 } else {
                     alert('Error al eliminar');
                 }
-            } catch(e) {
+            } catch (e) {
                 alert('Error de conexión');
             }
         }
-        
+
         // ========== GUARDAR ==========
         async function guardarUsuario() {
             const id = document.getElementById('userId').value;
@@ -415,41 +457,36 @@
             const nombre = document.getElementById('userNombre').value;
             const email = document.getElementById('userEmail').value;
             const rol = document.getElementById('userRol').value;
-            
-            if (!nombre) {
-                alert('Nombre completo es obligatorio');
-                document.getElementById('userNombre').focus();
+
+            if (!nombre || !email) {
+                alert('Nombre y email son obligatorios');
                 return;
             }
-            
+
             if (!validarEmail(email)) {
                 alert('Email inválido');
-                document.getElementById('userEmail').focus();
                 return;
             }
-            
+
             const data = { nombre, email, rol_id: parseInt(rol), empresa_id: 1 };
-            
+
             if (!editando) {
                 const pass = document.getElementById('userPassword').value;
                 const pass2 = document.getElementById('userPassword2').value;
-                
                 if (!validarContraseña(pass)) {
                     alert('La contraseña debe tener al menos 6 caracteres');
-                    document.getElementById('userPassword').focus();
                     return;
                 }
                 if (pass !== pass2) {
                     alert('Las contraseñas no coinciden');
-                    document.getElementById('userPassword2').focus();
                     return;
                 }
                 data.password = pass;
             }
-            
+
             const url = id ? `${API_URL}/usuarios/${id}` : `${API_URL}/usuarios/register`;
             const method = id ? 'PUT' : 'POST';
-            
+
             try {
                 const res = await fetch(url, {
                     method,
@@ -459,7 +496,7 @@
                     },
                     body: JSON.stringify(data)
                 });
-                
+
                 if (res.ok) {
                     alert(id ? 'Usuario actualizado' : 'Usuario creado');
                     document.getElementById('formUsuario').style.display = 'none';
@@ -468,65 +505,60 @@
                     const error = await res.json();
                     alert('Error: ' + JSON.stringify(error));
                 }
-            } catch(e) {
+            } catch (e) {
                 alert('Error de conexión');
             }
         }
-        
+
         // ========== CAMBIAR CONTRASEÑA ==========
         document.getElementById('btnMostrarCambioPass')?.addEventListener('click', function() {
-            const cambioDiv = document.getElementById('campoCambioPass');
-            if (cambioDiv.style.display === 'none') {
-                cambioDiv.style.display = 'block';
-                this.textContent = '❌ Ocultar cambio';
+            const div = document.getElementById('campoCambioPass');
+            if (div.style.display === 'none') {
+                div.style.display = 'block';
+                this.innerHTML = '<i class="fas fa-times"></i> Ocultar cambio';
             } else {
-                cambioDiv.style.display = 'none';
-                this.textContent = '🔑 Cambiar contraseña';
+                div.style.display = 'none';
+                this.innerHTML = '<i class="fas fa-key"></i> Cambiar contraseña';
                 document.getElementById('passAntigua').value = '';
                 document.getElementById('passNueva').value = '';
                 document.getElementById('passNueva2').value = '';
                 limpiarErrores();
             }
         });
-        
+
         document.getElementById('btnCancelarCambioPass')?.addEventListener('click', function() {
             document.getElementById('campoCambioPass').style.display = 'none';
-            document.getElementById('btnMostrarCambioPass').textContent = '🔑 Cambiar contraseña';
+            document.getElementById('btnMostrarCambioPass').innerHTML = '<i class="fas fa-key"></i> Cambiar contraseña';
             document.getElementById('passAntigua').value = '';
             document.getElementById('passNueva').value = '';
             document.getElementById('passNueva2').value = '';
             limpiarErrores();
         });
-        
+
         document.getElementById('btnAplicarCambioPass')?.addEventListener('click', async function() {
             const id = document.getElementById('userId').value;
             if (!id) {
                 alert('Primero guarda el usuario');
                 return;
             }
-            
+
             const passAntigua = document.getElementById('passAntigua').value;
             const passNueva = document.getElementById('passNueva').value;
             const passNueva2 = document.getElementById('passNueva2').value;
-            
+
             if (!passAntigua) {
                 alert('Ingresa la contraseña actual');
-                document.getElementById('passAntigua').focus();
                 return;
             }
-            
             if (!validarContraseña(passNueva)) {
                 alert('La nueva contraseña debe tener al menos 6 caracteres');
-                document.getElementById('passNueva').focus();
                 return;
             }
-            
             if (passNueva !== passNueva2) {
                 alert('Las contraseñas no coinciden');
-                document.getElementById('passNueva2').focus();
                 return;
             }
-            
+
             try {
                 const res = await fetch(`${API_URL}/usuarios/${id}/cambiar-pass`, {
                     method: 'POST',
@@ -539,11 +571,11 @@
                         pass_nueva: passNueva
                     })
                 });
-                
+
                 if (res.ok) {
                     alert('Contraseña actualizada correctamente');
                     document.getElementById('campoCambioPass').style.display = 'none';
-                    document.getElementById('btnMostrarCambioPass').textContent = '🔑 Cambiar contraseña';
+                    document.getElementById('btnMostrarCambioPass').innerHTML = '<i class="fas fa-key"></i> Cambiar contraseña';
                     document.getElementById('passAntigua').value = '';
                     document.getElementById('passNueva').value = '';
                     document.getElementById('passNueva2').value = '';
@@ -552,11 +584,11 @@
                     const error = await res.json();
                     alert('Error: ' + (error.detail || 'Contraseña incorrecta'));
                 }
-            } catch(e) {
+            } catch (e) {
                 alert('Error de conexión');
             }
         });
-        
+
         // ========== EVENTOS ==========
         document.getElementById('btnNuevoUsuario')?.addEventListener('click', () => {
             document.getElementById('userId').value = '';
@@ -569,15 +601,15 @@
             limpiarErrores();
             document.getElementById('userNombre').focus();
         });
-        
+
         document.getElementById('btnCancelar')?.addEventListener('click', () => {
             document.getElementById('formUsuario').style.display = 'none';
             document.getElementById('campoCambioPass').style.display = 'none';
-            document.getElementById('btnMostrarCambioPass').textContent = '🔑 Cambiar contraseña';
+            document.getElementById('btnMostrarCambioPass').innerHTML = '<i class="fas fa-key"></i> Cambiar contraseña';
         });
-        
+
         document.getElementById('btnGuardar')?.addEventListener('click', guardarUsuario);
-        
+
         // ========== INICIAR ==========
         cargarUsuarios();
     </script>

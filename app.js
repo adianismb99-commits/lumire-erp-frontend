@@ -110,6 +110,17 @@ async function loadDashboard() {
             container.innerHTML = `<div style="color:red; padding:20px;">Error al cargar datos: ${error.message}</div>`;
         }
     }
+    // En loadDashboard(), después de cargar productos y ventas
+    try {
+        const usuariosRes = await fetch(`${API_URL}/usuarios/public`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const usuarios = await usuariosRes.json();
+        const totalUsuariosElem = document.getElementById('totalUsuarios');
+        if (totalUsuariosElem) totalUsuariosElem.textContent = usuarios.length;
+    } catch (e) {
+        console.error('Error cargando usuarios:', e);
+    }
 }
 
 // ============================================

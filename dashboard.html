@@ -2,45 +2,91 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>LUMIRE ERP - Dashboard</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="dashboard-container">
-        <div class="sidebar">
-            <h2>LUMIRE ERP</h2>
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">LUMIRE <span>ERP</span></div>
             <nav>
-                <a href="dashboard.html">📊 Dashboard</a>
-                <a href="ventas.html">💰 Punto de Venta</a>
-                <a href="productos.html">📦 Productos</a>
-                <a href="ventas.html#historial">📋 Historial de Ventas</a>
-                <a href="usuarios.html">👥 Usuarios</a>
-                <a href="#" id="logoutBtn" style="background:#e53e3e;">🚪 Salir</a>
+                <a href="dashboard.html" class="active">
+                    <i class="fas fa-chart-pie"></i> Dashboard
+                </a>
+                <a href="ventas.html">
+                    <i class="fas fa-cash-register"></i> Punto de Venta
+                </a>
+                <a href="productos.html">
+                    <i class="fas fa-boxes"></i> Productos
+                </a>
+                <a href="usuarios.html">
+                    <i class="fas fa-users"></i> Usuarios
+                </a>
+                <a href="#" id="logoutBtn" class="logout">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </a>
             </nav>
-        </div>
-        <div class="main-content">
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
             <div class="top-bar">
-                <h1>Dashboard</h1>
+                <h1><i class="fas fa-chart-pie" style="color: var(--accent-purple);"></i> Dashboard</h1>
+                <div class="user-info">
+                    <i class="fas fa-bell" style="color: var(--text-secondary); cursor: pointer;"></i>
+                    <div class="avatar">A</div>
+                </div>
             </div>
-            <div id="dashboardContent">
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-                    <div style="background: white; padding: 20px; border-radius: 10px;">
-                        <h3>Productos</h3>
-                        <p id="totalProductos" style="font-size: 2em;">0</p>
+
+            <!-- Cards -->
+            <div class="cards-grid" id="dashboardContent">
+                <div class="card">
+                    <div class="card-label">Productos</div>
+                    <div class="card-value purple" id="totalProductos">0</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Ventas Totales</div>
+                    <div class="card-value cyan" id="totalVentas">$0</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Estado del Sistema</div>
+                    <div class="card-value green" style="font-size: 1.2em;">🟢 Activo</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Usuarios</div>
+                    <div class="card-value yellow" id="totalUsuarios">0</div>
+                </div>
+            </div>
+
+            <!-- Sección adicional -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div class="card" style="padding: 24px;">
+                    <h3 style="font-size: 1em; margin-bottom: 16px; color: var(--text-secondary);">
+                        <i class="fas fa-clock" style="color: var(--accent-cyan);"></i> Actividad Reciente
+                    </h3>
+                    <div style="color: var(--text-muted); font-size: 0.9em;">
+                        <p>🟢 Venta #45 registrada - $150</p>
+                        <p>🟢 Venta #44 registrada - $80</p>
+                        <p>🟡 Stock bajo: Harina</p>
                     </div>
-                    <div style="background: white; padding: 20px; border-radius: 10px;">
-                        <h3>Ventas Totales</h3>
-                        <p id="totalVentas" style="font-size: 2em;">$0</p>
-                    </div>
-                    <div style="background: white; padding: 20px; border-radius: 10px;">
-                        <h3>Estado</h3>
-                        <p style="color: green;">🟢 Sistema Activo</p>
+                </div>
+                <div class="card" style="padding: 24px;">
+                    <h3 style="font-size: 1em; margin-bottom: 16px; color: var(--text-secondary);">
+                        <i class="fas fa-star" style="color: var(--warning);"></i> Top Productos
+                    </h3>
+                    <div style="color: var(--text-muted); font-size: 0.9em;">
+                        <p>🥇 Croqueta - $2,400</p>
+                        <p>🥈 Buñuelo - $1,800</p>
+                        <p>🥉 Hamburguesa - $1,200</p>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>

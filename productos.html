@@ -2,108 +2,179 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>LUMIRE ERP - Productos</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="dashboard-container">
-        <div class="sidebar">
-            <h2>LUMIRE ERP</h2>
+        <aside class="sidebar">
+            <div class="logo">LUMIRE <span>ERP</span></div>
             <nav>
-                <a href="dashboard.html">📊 Dashboard</a>
-                <a href="ventas.html">💰 Punto de Venta</a>
-                <a href="productos.html">📦 Productos</a>
-                <a href="#" id="logoutBtn" style="background:#e53e3e;">🚪 Salir</a>
+                <a href="dashboard.html">
+                    <i class="fas fa-chart-pie"></i> Dashboard
+                </a>
+                <a href="ventas.html">
+                    <i class="fas fa-cash-register"></i> Punto de Venta
+                </a>
+                <a href="productos.html" class="active">
+                    <i class="fas fa-boxes"></i> Productos
+                </a>
+                <a href="usuarios.html">
+                    <i class="fas fa-users"></i> Usuarios
+                </a>
+                <a href="#" id="logoutBtn" class="logout">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </a>
             </nav>
-        </div>
-        <div class="main-content">
+        </aside>
+
+        <main class="main-content">
             <div class="top-bar">
-                <h1>Productos</h1>
+                <h1><i class="fas fa-boxes" style="color: var(--accent-purple);"></i> Productos</h1>
+                <button class="btn-primary" id="btnNuevoUsuario" style="width: auto; padding: 10px 20px; background: var(--success);">
+                    <i class="fas fa-plus"></i> Nuevo Producto
+                </button>
             </div>
-            <div>
-                <button onclick="mostrarFormulario()" style="width: auto; margin-bottom: 20px;">+ Nuevo Producto</button>
-                <div id="formProducto" style="display: none; background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-                    <input type="text" id="prodNombre" placeholder="Nombre" style="width: 100%; padding: 10px; margin-bottom: 10px;">
-                    <input type="number" id="prodPrecio" placeholder="Precio" style="width: 100%; padding: 10px; margin-bottom: 10px;">
-                    <input type="text" id="prodUnidad" placeholder="Unidad (unidad, kg, lb)" style="width: 100%; padding: 10px; margin-bottom: 10px;">
-                    <button onclick="crearProducto()" style="width: auto;">Guardar</button>
-                    <button onclick="ocultarFormulario()" style="width: auto; background: gray;">Cancelar</button>
+
+            <!-- Formulario -->
+            <div id="formUsuario" style="display: none; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 24px; margin-bottom: 24px;">
+                <h3 style="margin-bottom: 16px; color: var(--text-secondary);">
+                    <i class="fas fa-edit"></i> <span id="formTitulo">Crear Producto</span>
+                </h3>
+                <input type="hidden" id="userId">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <input type="text" id="userNombre" placeholder="Nombre del producto" style="grid-column: 1 / -1; padding: 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary);">
+                    <input type="number" id="userPrecio" placeholder="Precio de venta" style="padding: 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary);">
+                    <input type="text" id="userUnidad" placeholder="Unidad (unidad, kg, lb)" style="padding: 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary);">
                 </div>
+                <div style="display: flex; gap: 12px; margin-top: 16px;">
+                    <button class="btn-primary" id="btnGuardarUsuario" style="flex: 1;">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                    <button class="btn-primary" id="btnCancelarUsuario" style="flex: 1; background: var(--danger);">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Lista de productos -->
+            <div class="card" style="padding: 20px;">
+                <h3 style="font-size: 1em; margin-bottom: 16px; color: var(--text-secondary);">
+                    <i class="fas fa-list"></i> Lista de Productos
+                </h3>
                 <div id="listaProductos"></div>
             </div>
-        </div>
+        </main>
     </div>
+
     <script src="app.js"></script>
     <script>
-        let tokenProductos = localStorage.getItem('token');
-        
+        const API_URL = 'https://lumire-erp-backend.onrender.com/api';
+        let token = localStorage.getItem('token');
+
+        function toggleForm(show) {
+            document.getElementById('formUsuario').style.display = show ? 'block' : 'none';
+        }
+
         function mostrarFormulario() {
-            document.getElementById('formProducto').style.display = 'block';
+            document.getElementById('userId').value = '';
+            document.getElementById('userNombre').value = '';
+            document.getElementById('userPrecio').value = '';
+            document.getElementById('userUnidad').value = '';
+            document.getElementById('formTitulo').textContent = 'Crear Producto';
+            toggleForm(true);
         }
-        
+
         function ocultarFormulario() {
-            document.getElementById('formProducto').style.display = 'none';
+            toggleForm(false);
         }
-        
+
         async function cargarProductos() {
-            const API_URL = 'https://lumire-erp-backend.onrender.com/api'; {
-                headers: { 'Authorization': `Bearer ${tokenProductos}` }
-            });
-            const productos = await response.json();
-            
             const container = document.getElementById('listaProductos');
-            container.innerHTML = '<h3>Lista de Productos</h3>';
-            
-            productos.forEach(p => {
-                const div = document.createElement('div');
-                div.style.cssText = 'background: white; padding: 15px; margin-bottom: 10px; border-radius: 5px; display: flex; justify-content: space-between;';
-                div.innerHTML = `
-                    <div>
-                        <strong>${p.nombre}</strong><br>
-                        Precio: $${p.precio_venta} | Unidad: ${p.unidad_base}
-                    </div>
-                `;
-                container.appendChild(div);
-            });
+            container.innerHTML = '<div style="color: var(--text-muted);">Cargando...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/productos/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted);">No hay productos registrados</div>';
+                    return;
+                }
+
+                let html = '';
+                data.forEach(p => {
+                    html += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border-color);">
+                            <div>
+                                <strong style="color: var(--text-primary);">${p.nombre}</strong>
+                                <span style="color: var(--text-muted); font-size: 0.9em; margin-left: 12px;">${p.unidad_base || 'unidad'}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 16px;">
+                                <span style="color: var(--accent-cyan); font-weight: 600;">$${p.precio_venta}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = '<div style="color: var(--danger);">Error al cargar productos</div>';
+            }
         }
-        
-        async function crearProducto() {
-            const nombre = document.getElementById('prodNombre').value;
-            const precio = parseFloat(document.getElementById('prodPrecio').value);
-            const unidad = document.getElementById('prodUnidad').value;
-            
+
+        async function guardarProducto() {
+            const nombre = document.getElementById('userNombre').value;
+            const precio = parseFloat(document.getElementById('userPrecio').value);
+            const unidad = document.getElementById('userUnidad').value;
+
             if (!nombre || !precio || !unidad) {
-                alert('Complete todos los campos');
+                alert('Completa todos los campos');
                 return;
             }
-            
-            const API_URL = 'https://lumire-erp-backend.onrender.com/api'; {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${tokenProductos}`
-                },
-                body: JSON.stringify({
-                    nombre: nombre,
-                    precio_venta: precio,
-                    unidad_base: unidad,
-                    empresa_id: 1
-                })
-            });
-            
-            if (response.ok) {
-                alert('Producto creado');
-                ocultarFormulario();
-                document.getElementById('prodNombre').value = '';
-                document.getElementById('prodPrecio').value = '';
-                document.getElementById('prodUnidad').value = '';
-                cargarProductos();
-            } else {
-                alert('Error al crear producto');
+
+            try {
+                const res = await fetch(`${API_URL}/productos/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        nombre,
+                        precio_venta: precio,
+                        unidad_base: unidad,
+                        empresa_id: 1
+                    })
+                });
+
+                if (res.ok) {
+                    alert('Producto creado');
+                    ocultarFormulario();
+                    document.getElementById('userNombre').value = '';
+                    document.getElementById('userPrecio').value = '';
+                    document.getElementById('userUnidad').value = '';
+                    cargarProductos();
+                } else {
+                    alert('Error al crear producto');
+                }
+            } catch (e) {
+                alert('Error de conexión');
             }
         }
-        
+
+        document.getElementById('btnNuevoUsuario')?.addEventListener('click', mostrarFormulario);
+        document.getElementById('btnCancelarUsuario')?.addEventListener('click', ocultarFormulario);
+        document.getElementById('btnGuardarUsuario')?.addEventListener('click', guardarProducto);
+
+        document.getElementById('logoutBtn')?.addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        });
+
         cargarProductos();
     </script>
 </body>
