@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>LUMIRE ERP - Recetas y Producción</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .receta-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .receta-card:hover {
+            border-color: var(--accent-purple);
+            box-shadow: var(--shadow-hover);
+        }
+        .receta-card .receta-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .receta-card .receta-nombre {
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        .receta-card .receta-producto {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+        .receta-card .receta-ingredientes {
+            margin-top: 8px;
+            color: var(--text-muted);
+            font-size: 0.85em;
+        }
+        .btn-producir {
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-producir:hover {
+            opacity: 0.8;
+            transform: translateY(-1px);
+        }
+        .btn-eliminar-receta {
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-eliminar-receta:hover {
+            opacity: 0.8;
+        }
+        .detalle-receta {
+            display: none;
+            margin-top: 12px;
+            padding: 12px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-sm);
+        }
+        .detalle-receta.visible {
+            display: block;
+        }
+        .ingrediente-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9em;
+        }
+        .produccion-form {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-top: 16px;
+            display: none;
+        }
+        .produccion-form.visible {
+            display: block;
+        }
+        .produccion-resumen {
+            background: var(--bg-primary);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin: 16px 0;
+        }
+        .produccion-resumen .item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9em;
+        }
+        .btn-produccion {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 10px 24px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-produccion:hover {
+            opacity: 0.8;
+            transform: translateY(-2px);
+        }
+        .badge {
+            background: var(--accent-purple);
+            color: white;
+            border-radius: 20px;
+            padding: 2px 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">LUMIRE <span>ERP</span></div>
+            <nav>
+                <a href="dashboard.html"><i class="fas fa-chart-pie"></i> Panel de Control</a>
+                <a href="ventas.html"><i class="fas fa-cash-register"></i> Punto de Venta</a>
+                <a href="productos.html"><i class="fas fa-boxes"></i> Productos</a>
+                <a href="recetas.html" class="active"><i class="fas fa-utensils"></i> Recetas</a>
+                <a href="usuarios.html"><i class="fas fa-users"></i> Usuarios</a>
+                <a href="#" id="logoutBtn" class="logout"><i class="fas fa-sign-out-alt"></i> Salir</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <h1><i class="fas fa-utensils" style="color: var(--accent-purple);"></i> Recetas y Producción</h1>
+                <button id="btnNuevaReceta" class="btn-primary" style="width: auto; padding: 10px 20px; background: var(--success);">
+                    <i class="fas fa-plus"></i> Nueva Receta
+                </button>
+            </div>
+
+            <!-- Formulario nueva receta -->
+            <div id="formReceta" style="display: none; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 24px; margin-bottom: 24px;">
+                <h3 style="margin-bottom: 16px; color: var(--text-secondary);">
+                    <i class="fas fa-edit"></i> <span id="formTituloReceta">Crear Receta</span>
+                </h3>
+                <input type="hidden" id="recetaId">
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div style="grid-column: 1 / -1;">
+                        <label style="color: var(--text-secondary); font-size: 0.85em;">Producto</label>
+                        <select id="recetaProducto" style="width: 100%; padding: 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); margin-top: 4px;">
+                            <option value="">Seleccionar producto...</option>
+                        </select>
+                    </div>
+                    <div style="grid-column: 1 / -1;">
+                        <label style="color: var(--text-secondary); font-size: 0.85em;">Nombre de la receta</label>
+                        <input type="text" id="recetaNombre" placeholder="Ej: Receta clásica" style="width: 100%; padding: 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); margin-top: 4px;">
+                    </div>
+                    <div>
+                        <label style="color: var(--text-secondary); font-size: 0.85em;">Rendimiento (unidades)</label>
+                        <input type="number" id="recetaRendimiento" placeholder="40" style="width: 100%; padding: 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); margin-top: 4px;">
+                    </div>
+                    <div>
+                        <label style="color: var(--text-secondary); font-size: 0.85em;">Unidad de rendimiento</label>
+                        <input type="text" id="recetaUnidad" placeholder="unidades" style="width: 100%; padding: 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); margin-top: 4px;">
+                    </div>
+                </div>
+
+                <div style="margin: 16px 0;">
+                    <h4 style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 8px;">Ingredientes</h4>
+                    <div id="ingredientesContainer">
+                        <div class="ingrediente-row" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+                            <select class="ingrediente-select" style="flex: 2; padding: 8px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary);">
+                                <option value="">Seleccionar ingrediente...</option>
+                            </select>
+                            <input type="number" class="ingrediente-cantidad" placeholder="Cantidad" style="flex: 1; padding: 8px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); width: 80px;">
+                            <input type="text" class="ingrediente-unidad" placeholder="Unidad" style="flex: 1; padding: 8px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); width: 80px;">
+                            <button class="btn-eliminar-ingrediente" style="background: var(--danger); color: white; border: none; border-radius: var(--radius-sm); padding: 8px 12px; cursor: pointer;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button id="btnAgregarIngrediente" class="btn-primary" style="width: auto; padding: 6px 16px; background: var(--accent-cyan); color: var(--bg-primary);">
+                        <i class="fas fa-plus"></i> Agregar ingrediente
+                    </button>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <button id="btnGuardarReceta" class="btn-primary" style="flex: 1;">
+                        <i class="fas fa-save"></i> Guardar Receta
+                    </button>
+                    <button id="btnCancelarReceta" class="btn-primary" style="flex: 1; background: var(--danger);">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Formulario de producción -->
+            <div id="formProduccion" class="produccion-form">
+                <h3 style="color: var(--text-secondary); margin-bottom: 16px;">
+                    <i class="fas fa-industry"></i> Registrar Producción
+                </h3>
+                <input type="hidden" id="produccionRecetaId">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                    <div>
+                        <label style="color: var(--text-secondary); font-size: 0.85em;">Cantidad a producir</label>
+                        <input type="number" id="produccionCantidad" placeholder="80" style="width: 100%; padding: 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); margin-top: 4px;">
+                    </div>
+                    <div>
+                        <label style="color: var(--text-secondary); font-size: 0.85em;">Lote</label>
+                        <input type="text" id="produccionLote" placeholder="Lote-001" style="width: 100%; padding: 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); margin-top: 4px;">
+                    </div>
+                    <div>
+                        <label style="color: var(--text-secondary); font-size: 0.85em;">Fecha</label>
+                        <input type="date" id="produccionFecha" style="width: 100%; padding: 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); margin-top: 4px;">
+                    </div>
+                </div>
+                <div id="produccionResumen" class="produccion-resumen"></div>
+                <button id="btnEjecutarProduccion" class="btn-produccion">
+                    <i class="fas fa-play"></i> Ejecutar Producción
+                </button>
+                <button id="btnCancelarProduccion" class="btn-primary" style="background: var(--danger); margin-left: 12px;">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+
+            <!-- Lista de recetas -->
+            <div class="card" style="padding: 20px;">
+                <h3 style="font-size: 1em; margin-bottom: 16px; color: var(--text-secondary);">
+                    <i class="fas fa-list"></i> Recetas
+                </h3>
+                <div id="listaRecetas">
+                    <div style="color: var(--text-muted);">Cargando recetas...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_URL = 'https://lumire-erp-backend.onrender.com/api';
+        let token = localStorage.getItem('token');
+        let ingredientesLista = [];
+        let productosLista = [];
+
+        // ========== FUNCIONES ==========
+
+        function getRol(id) {
+            const roles = {1: 'ADMIN', 2: 'VENDEDOR', 3: 'CAJERO', 4: 'GERENTE'};
+            return roles[id] || 'SIN ROL';
+        }
+
+        function mostrarFormularioReceta(receta = null) {
+            const form = document.getElementById('formReceta');
+            form.style.display = 'block';
+            document.getElementById('formTituloReceta').textContent = receta ? 'Editar Receta' : 'Crear Receta';
+            if (receta) {
+                document.getElementById('recetaId').value = receta.id;
+                document.getElementById('recetaProducto').value = receta.producto_id;
+                document.getElementById('recetaNombre').value = receta.nombre;
+                document.getElementById('recetaRendimiento').value = receta.rendimiento;
+                document.getElementById('recetaUnidad').value = receta.unidad_rendimiento;
+                // Cargar ingredientes de la receta
+                cargarIngredientesReceta(receta.id);
+            } else {
+                document.getElementById('recetaId').value = '';
+                document.getElementById('recetaProducto').value = '';
+                document.getElementById('recetaNombre').value = '';
+                document.getElementById('recetaRendimiento').value = '';
+                document.getElementById('recetaUnidad').value = '';
+                document.getElementById('ingredientesContainer').innerHTML = '';
+                agregarFilaIngrediente();
+            }
+        }
+
+        function ocultarFormularioReceta() {
+            document.getElementById('formReceta').style.display = 'none';
+        }
+
+        function agregarFilaIngrediente(ingrediente = null) {
+            const container = document.getElementById('ingredientesContainer');
+            const row = document.createElement('div');
+            row.className = 'ingrediente-row';
+            row.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px; align-items: center;';
+
+            const select = document.createElement('select');
+            select.className = 'ingrediente-select';
+            select.style.cssText = 'flex: 2; padding: 8px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary);';
+            select.innerHTML = '<option value="">Seleccionar ingrediente...</option>';
+            ingredientesLista.forEach(ing => {
+                const opt = document.createElement('option');
+                opt.value = ing.id;
+                opt.textContent = ing.nombre;
+                if (ingrediente && ing.id === ingrediente.ingrediente_id) opt.selected = true;
+                select.appendChild(opt);
+            });
+
+            const cantidad = document.createElement('input');
+            cantidad.type = 'number';
+            cantidad.className = 'ingrediente-cantidad';
+            cantidad.placeholder = 'Cantidad';
+            cantidad.style.cssText = 'flex: 1; padding: 8px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); width: 80px;';
+            if (ingrediente) cantidad.value = ingrediente.cantidad;
+
+            const unidad = document.createElement('input');
+            unidad.type = 'text';
+            unidad.className = 'ingrediente-unidad';
+            unidad.placeholder = 'Unidad';
+            unidad.style.cssText = 'flex: 1; padding: 8px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); width: 80px;';
+            if (ingrediente) unidad.value = ingrediente.unidad;
+
+            const btn = document.createElement('button');
+            btn.className = 'btn-eliminar-ingrediente';
+            btn.style.cssText = 'background: var(--danger); color: white; border: none; border-radius: var(--radius-sm); padding: 8px 12px; cursor: pointer;';
+            btn.innerHTML = '<i class="fas fa-times"></i>';
+            btn.addEventListener('click', () => row.remove());
+
+            row.appendChild(select);
+            row.appendChild(cantidad);
+            row.appendChild(unidad);
+            row.appendChild(btn);
+            container.appendChild(row);
+        }
+
+        async function cargarIngredientesReceta(recetaId) {
+            try {
+                const res = await fetch(`${API_URL}/recetas/${recetaId}/ingredientes`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                document.getElementById('ingredientesContainer').innerHTML = '';
+                if (data.length === 0) {
+                    agregarFilaIngrediente();
+                } else {
+                    data.forEach(ing => agregarFilaIngrediente(ing));
+                }
+            } catch (e) {
+                agregarFilaIngrediente();
+            }
+        }
+
+        // ========== CARGAR DATOS ==========
+
+        async function cargarProductos() {
+            try {
+                const res = await fetch(`${API_URL}/productos/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                productosLista = await res.json();
+                const select = document.getElementById('recetaProducto');
+                select.innerHTML = '<option value="">Seleccionar producto...</option>';
+                productosLista.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = `${p.nombre} ($${p.precio_venta})`;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                console.error('Error cargando productos:', e);
+            }
+        }
+
+        async function cargarIngredientesSelects() {
+            try {
+                const res = await fetch(`${API_URL}/ingredientes/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                ingredientesLista = await res.json();
+                // Actualizar todos los selects de ingredientes
+                document.querySelectorAll('.ingrediente-select').forEach(select => {
+                    const currentVal = select.value;
+                    select.innerHTML = '<option value="">Seleccionar ingrediente...</option>';
+                    ingredientesLista.forEach(ing => {
+                        const opt = document.createElement('option');
+                        opt.value = ing.id;
+                        opt.textContent = ing.nombre;
+                        select.appendChild(opt);
+                    });
+                    if (currentVal) select.value = currentVal;
+                });
+            } catch (e) {
+                console.error('Error cargando ingredientes:', e);
+            }
+        }
+
+        async function cargarRecetas() {
+            const container = document.getElementById('listaRecetas');
+            container.innerHTML = '<div style="color: var(--text-muted);">Cargando recetas...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/recetas/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted);">No hay recetas registradas</div>';
+                    return;
+                }
+
+                let html = '';
+                for (const r of data) {
+                    // Obtener ingredientes de cada receta
+                    let ingredientesHtml = '';
+                    try {
+                        const ingRes = await fetch(`${API_URL}/recetas/${r.id}/ingredientes`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const ings = await ingRes.json();
+                        if (ings.length > 0) {
+                            ingredientesHtml = ings.map(i => 
+                                `<span style="background: var(--bg-primary); padding: 2px 10px; border-radius: 12px; margin: 2px; display: inline-block;">${i.cantidad} ${i.unidad} de ${i.ingrediente_nombre || '?'}</span>`
+                            ).join('');
+                        } else {
+                            ingredientesHtml = '<span style="color: var(--text-muted);">Sin ingredientes</span>';
+                        }
+                    } catch (e) {
+                        ingredientesHtml = '<span style="color: var(--text-muted);">Error cargando ingredientes</span>';
+                    }
+
+                    const productoNombre = productosLista.find(p => p.id === r.producto_id)?.nombre || 'Producto desconocido';
+
+                    html += `
+                        <div class="receta-card" onclick="toggleDetalle(${r.id})">
+                            <div class="receta-header">
+                                <div>
+                                    <span class="receta-nombre">${r.nombre}</span>
+                                    <span class="receta-producto">→ ${productoNombre}</span>
+                                    <span class="badge">${r.rendimiento} ${r.unidad_rendimiento || 'unidades'}</span>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="btn-producir" onclick="event.stopPropagation(); mostrarProduccion(${r.id})">
+                                        <i class="fas fa-play"></i> Producir
+                                    </button>
+                                    <button class="btn-eliminar-receta" onclick="event.stopPropagation(); eliminarReceta(${r.id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="detalle-${r.id}" class="detalle-receta">
+                                <div style="margin-top: 8px;">
+                                    <strong style="color: var(--text-secondary); font-size: 0.9em;">Ingredientes:</strong>
+                                    <div style="margin-top: 4px;">${ingredientesHtml}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = '<div style="color: var(--danger);">Error cargando recetas</div>';
+                console.error(e);
+            }
+        }
+
+        function toggleDetalle(id) {
+            const el = document.getElementById(`detalle-${id}`);
+            if (el) el.classList.toggle('visible');
+        }
+
+        // ========== PRODUCCIÓN ==========
+
+        function mostrarProduccion(recetaId) {
+            const form = document.getElementById('formProduccion');
+            form.classList.add('visible');
+            document.getElementById('produccionRecetaId').value = recetaId;
+            document.getElementById('produccionCantidad').value = '';
+            document.getElementById('produccionLote').value = `LOTE-${Date.now().toString().slice(-6)}`;
+            document.getElementById('produccionFecha').value = new Date().toISOString().split('T')[0];
+            document.getElementById('produccionResumen').innerHTML = '<div style="color: var(--text-muted);">Ingresa la cantidad para calcular los ingredientes necesarios.</div>';
+            // Calcular automáticamente cuando cambie la cantidad
+            document.getElementById('produccionCantidad').oninput = calcularProduccion;
+            calcularProduccion();
+        }
+
+        async function calcularProduccion() {
+            const recetaId = document.getElementById('produccionRecetaId').value;
+            const cantidad = parseInt(document.getElementById('produccionCantidad').value) || 0;
+            const resumen = document.getElementById('produccionResumen');
+
+            if (!recetaId || cantidad <= 0) {
+                resumen.innerHTML = '<div style="color: var(--text-muted);">Ingresa la cantidad para calcular los ingredientes necesarios.</div>';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/recetas/${recetaId}/calcular?cantidad=${cantidad}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.error) {
+                    resumen.innerHTML = `<div style="color: var(--danger);">${data.error}</div>`;
+                    return;
+                }
+                let html = '<div style="font-weight: 600; margin-bottom: 8px;">Ingredientes necesarios:</div>';
+                data.forEach(ing => {
+                    html += `<div class="item"><span>${ing.ingrediente_nombre}</span><span>${ing.cantidad_total} ${ing.unidad}</span></div>`;
+                });
+                resumen.innerHTML = html;
+            } catch (e) {
+                resumen.innerHTML = '<div style="color: var(--danger);">Error calculando producción</div>';
+            }
+        }
+
+        async function ejecutarProduccion() {
+            const recetaId = document.getElementById('produccionRecetaId').value;
+            const cantidad = parseInt(document.getElementById('produccionCantidad').value);
+            const lote = document.getElementById('produccionLote').value;
+            const fecha = document.getElementById('produccionFecha').value;
+
+            if (!recetaId || !cantidad || cantidad <= 0) {
+                alert('Ingresa una cantidad válida');
+                return;
+            }
+            if (!lote) {
+                alert('Ingresa un lote');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/produccion/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        receta_id: parseInt(recetaId),
+                        cantidad_producir: cantidad,
+                        lote: lote,
+                        fecha: fecha
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(`✅ Producción registrada correctamente\nLote: ${lote}\nCantidad: ${cantidad}`);
+                    document.getElementById('formProduccion').classList.remove('visible');
+                    cargarRecetas();
+                } else {
+                    alert('Error: ' + (data.detail || 'Error al registrar producción'));
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        }
+
+        // ========== CRUD RECETAS ==========
+
+        async function guardarReceta() {
+            const id = document.getElementById('recetaId').value;
+            const producto_id = document.getElementById('recetaProducto').value;
+            const nombre = document.getElementById('recetaNombre').value;
+            const rendimiento = parseFloat(document.getElementById('recetaRendimiento').value);
+            const unidad = document.getElementById('recetaUnidad').value;
+
+            if (!producto_id || !nombre || !rendimiento) {
+                alert('Completa todos los campos');
+                return;
+            }
+
+            // Recolectar ingredientes
+            const ingredientes = [];
+            const rows = document.querySelectorAll('.ingrediente-row');
+            rows.forEach(row => {
+                const select = row.querySelector('.ingrediente-select');
+                const cantidad = row.querySelector('.ingrediente-cantidad');
+                const unidad = row.querySelector('.ingrediente-unidad');
+                if (select.value && cantidad.value) {
+                    ingredientes.push({
+                        ingrediente_id: parseInt(select.value),
+                        cantidad: parseFloat(cantidad.value),
+                        unidad: unidad.value || 'unidad'
+                    });
+                }
+            });
+
+            if (ingredientes.length === 0) {
+                alert('Agrega al menos un ingrediente');
+                return;
+            }
+
+            const data = {
+                producto_id: parseInt(producto_id),
+                nombre: nombre,
+                rendimiento: rendimiento,
+                unidad_rendimiento: unidad || 'unidades',
+                ingredientes: ingredientes
+            };
+
+            const url = id ? `${API_URL}/recetas/${id}` : `${API_URL}/recetas/`;
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    alert(id ? 'Receta actualizada' : 'Receta creada');
+                    ocultarFormularioReceta();
+                    cargarRecetas();
+                } else {
+                    const error = await res.json();
+                    alert('Error: ' + JSON.stringify(error));
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        }
+
+        async function eliminarReceta(id) {
+            if (!confirm('¿Eliminar esta receta?')) return;
+            try {
+                const res = await fetch(`${API_URL}/recetas/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    alert('Receta eliminada');
+                    cargarRecetas();
+                } else {
+                    alert('Error al eliminar');
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        }
+
+        // ========== EVENTOS ==========
+
+        document.getElementById('btnNuevaReceta')?.addEventListener('click', () => {
+            mostrarFormularioReceta();
+            cargarIngredientesSelects();
+        });
+
+        document.getElementById('btnCancelarReceta')?.addEventListener('click', ocultarFormularioReceta);
+
+        document.getElementById('btnGuardarReceta')?.addEventListener('click', guardarReceta);
+
+        document.getElementById('btnAgregarIngrediente')?.addEventListener('click', () => {
+            agregarFilaIngrediente();
+            cargarIngredientesSelects();
+        });
+
+        document.getElementById('btnEjecutarProduccion')?.addEventListener('click', ejecutarProduccion);
+
+        document.getElementById('btnCancelarProduccion')?.addEventListener('click', () => {
+            document.getElementById('formProduccion').classList.remove('visible');
+        });
+
+        document.getElementById('logoutBtn')?.addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        });
+
+        // ========== INICIAR ==========
+
+        async function init() {
+            await cargarProductos();
+            await cargarRecetas();
+            // Cargar ingredientes para los selects
+            try {
+                const res = await fetch(`${API_URL}/ingredientes/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                ingredientesLista = await res.json();
+            } catch (e) {
+                console.error('Error cargando ingredientes:', e);
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
