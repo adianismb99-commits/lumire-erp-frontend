@@ -448,7 +448,7 @@ function show2FAForm(temporal_token) {
                 </button>
             </div>
         </div>
-        <div class="checkbox-group" style="margin: 12px 0;">
+        <div class="checkbox-group" style="margin: 12px 0;">  <!-- NUEVO -->
             <input type="checkbox" id="recordarDispositivo">
             <label for="recordarDispositivo" style="color: var(--text-secondary); font-size: 0.9em;">
                 <i class="fas fa-laptop"></i> Recordar este dispositivo por 15 días
@@ -505,7 +505,7 @@ function show2FAForm(temporal_token) {
     document.getElementById('btnVerificar2fa')?.addEventListener('click', async function() {
         const codigo = document.getElementById('codigo2fa').value.trim();
         const errorDiv = document.getElementById('error2fa');
-        const recordar = document.getElementById('recordarDispositivo')?.checked || false;
+        const recordar = document.getElementById('recordarDispositivo')?.checked || false;  // <-- NUEVO
         
         if (!codigo || codigo.length !== 6) {
             errorDiv.textContent = 'Ingresa los 6 dígitos del código';
@@ -519,7 +519,7 @@ function show2FAForm(temporal_token) {
                 body: JSON.stringify({
                     temporal_token: temporal_token,
                     codigo: codigo,
-                    recordar_dispositivo: recordar
+                    recordar_dispositivo: recordar  // <-- NUEVO
                 })
             });
             
