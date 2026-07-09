@@ -332,8 +332,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const password = pwdInput ? pwdInput.value.trim() : '';
                 const empresa_id = empresaSelect ? parseInt(empresaSelect.value) : 1;
                 
-                const recordarDispositivo = document.getElementById('recordarDispositivoLogin')?.checked || false;
-
                 if (!email || !password) {
                     if (errorMsg) errorMsg.textContent = 'Completa email y contraseña';
                     return;
