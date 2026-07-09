@@ -228,12 +228,35 @@
             window.location.href = 'index.html';
         });
 
+        // ========== FUNCIÓN PARA FORMATEAR FECHA EN CUBA ==========
+        function fechaCuba(fechaISO) {
+            if (!fechaISO) return 'Nunca';
+            try {
+                const fecha = new Date(fechaISO + 'Z');
+                return fecha.toLocaleString('es-CU', { 
+                    timeZone: 'America/Havana',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (e) {
+                return fechaISO;
+            }
+        }
+
         // ========== VERIFICAR ESTADO 2FA ==========
         async function verificarEstado2FA() {
             try {
                 const res = await fetch(`${API_URL}/usuarios/me`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+                
                 const user = await res.json();
                 const statusDiv = document.getElementById('status2fa');
                 const btnMostrar = document.getElementById('btnMostrarFormulario');
@@ -243,6 +266,8 @@
                 const btnActivar = document.getElementById('btnActivar2faPersonal');
                 const btnCambiar = document.getElementById('btnCambiar2faPersonal');
                 const cambiarSection = document.getElementById('cambiar2faSection');
+
+                console.log('Estado 2FA del usuario:', user['2fa_habilitado']);
 
                 if (user['2fa_habilitado'] === true) {
                     statusDiv.innerHTML = `
@@ -280,7 +305,15 @@
                     form.classList.remove('visible');
                 }
             } catch (e) {
-                document.getElementById('status2fa').innerHTML = '<p style="color: var(--danger);">Error al cargar el estado</p>';
+                console.error('Error al cargar estado 2FA:', e);
+                document.getElementById('status2fa').innerHTML = `
+                    <p style="color: var(--danger);">
+                        Error al cargar el estado. 
+                        <button onclick="verificarEstado2FA()" style="background: var(--accent-blue); color: white; border: none; padding: 4px 12px; border-radius: var(--radius-sm); cursor: pointer;">
+                            Reintentar
+                        </button>
+                    </p>
+                `;
             }
         }
 
