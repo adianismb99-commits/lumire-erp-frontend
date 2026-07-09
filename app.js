@@ -234,6 +234,8 @@ async function registrarVenta() {
         precio_unitario: item.precio
     }));
     
+    const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+    
     try {
         const response = await fetch(`${API_URL}/ventas/`, {
             method: 'POST',
@@ -250,6 +252,28 @@ async function registrarVenta() {
         });
         
         if (response.ok) {
+            const data = await response.json();
+            
+            // ============================================
+            // REGISTRAR MOVIMIENTO EN CAJA
+            // ============================================
+            try {
+                await fetch(`${API_URL}/caja/movimiento-venta`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        venta_id: data.id,
+                        total: total,
+                        concepto: `Venta #${data.id}`
+                    })
+                });
+            } catch (cajaError) {
+                console.log('Error al registrar en caja:', cajaError);
+            }
+            
             alert('✅ Venta registrada');
             carrito = [];
             actualizarCarrito();

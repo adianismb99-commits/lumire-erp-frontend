@@ -68,5 +68,47 @@
     </div>
 
     <script src="app.js"></script>
+    <script>
+        // ============================================
+        // FUNCIÓN PARA REGISTRAR MOVIMIENTO EN CAJA
+        // ============================================
+        async function registrarMovimientoCaja(ventaId, total, concepto) {
+            try {
+                await fetch('https://lumire-erp-backend.onrender.com/api/caja/movimiento-venta', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        venta_id: ventaId,
+                        total: total,
+                        concepto: concepto || `Venta #${ventaId}`
+                    })
+                });
+                // No mostramos error al usuario, solo se registra en segundo plano
+            } catch (e) {
+                console.log('Caja no registró movimiento:', e);
+            }
+        }
+
+        // ============================================
+        // MODIFICAR LA FUNCIÓN registrarVenta (desde app.js)
+        // ============================================
+        // El código de registrarVenta está en app.js
+        // Solo necesitas agregar esta línea después de registrar la venta:
+        // 
+        // if (response.ok) {
+        //     const data = await response.json();
+        //     // Registrar en caja
+        //     await registrarMovimientoCaja(data.id, total, `Venta #${data.id}`);
+        //     alert('✅ Venta registrada');
+        //     carrito = [];
+        //     actualizarCarrito();
+        // }
+        //
+        // Como app.js ya tiene esta función, no la duplicamos.
+        // Este script solo agrega la función auxiliar.
+    </script>
 </body>
 </html>

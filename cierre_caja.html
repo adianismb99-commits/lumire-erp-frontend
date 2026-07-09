@@ -3,10 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>LUMIRE ERP - Cierre de Caja</title>
+    <title>LUMIRE ERP - Caja Registradora</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --caja-abierta: #22c55e;
+            --caja-cerrada: #ef4444;
+        }
         .caja-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
@@ -27,11 +31,11 @@
             font-size: 0.8em;
             font-weight: 600;
         }
-        .estado.abierta { background: var(--success); color: white; }
-        .estado.cerrada { background: var(--danger); color: white; }
+        .estado.abierta { background: var(--caja-abierta); color: white; }
+        .estado.cerrada { background: var(--caja-cerrada); color: white; }
         .caja-card .totales {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 12px;
             margin-top: 16px;
         }
@@ -44,11 +48,6 @@
         .caja-card .totales .item .valor {
             font-size: 1.2em;
             font-weight: 700;
-        }
-        .caja-card .totales .item .etiqueta {
-            font-size: 0.75em;
-            color: var(--text-muted);
-            text-transform: uppercase;
         }
         .caja-card .totales .item .valor.positivo { color: var(--success); }
         .caja-card .totales .item .valor.negativo { color: var(--danger); }
@@ -64,15 +63,22 @@
         .btn-abrir { background: var(--success); color: white; }
         .btn-cerrar { background: var(--warning); color: var(--bg-primary); }
         .btn-gasto { background: var(--accent-cyan); color: var(--bg-primary); }
-        .btn-gasto:hover { opacity: 0.8; }
+        .btn-ingreso { background: var(--accent-purple); color: white; }
+        .btn-arqueo { background: var(--accent-blue); color: white; }
+        .btn-excel { background: #1e7e34; color: white; }
         .btn-imprimir { background: var(--accent-purple); color: white; }
-        .gasto-item {
+        .movimiento-item {
             display: flex;
             justify-content: space-between;
             padding: 8px 0;
             border-bottom: 1px solid var(--border-color);
             font-size: 0.9em;
+            flex-wrap: wrap;
+            gap: 8px;
         }
+        .movimiento-item .tipo-venta { color: var(--success); }
+        .movimiento-item .tipo-gasto { color: var(--danger); }
+        .movimiento-item .tipo-ingreso { color: var(--accent-cyan); }
         .modal {
             display: none;
             position: fixed;
@@ -88,13 +94,13 @@
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             padding: 32px;
-            max-width: 500px;
+            max-width: 600px;
             width: 90%;
             max-height: 80vh;
             overflow-y: auto;
         }
         .modal-content h3 { margin-bottom: 16px; color: var(--text-secondary); }
-        .modal-content input, .modal-content select {
+        .modal-content input, .modal-content select, .modal-content textarea {
             width: 100%;
             padding: 12px;
             margin-bottom: 12px;
@@ -103,10 +109,20 @@
             border-radius: var(--radius-sm);
             color: var(--text-primary);
         }
+        .modal-content .arqueo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .modal-content .arqueo-grid input {
+            margin-bottom: 0;
+        }
         .modal-buttons {
             display: flex;
             gap: 12px;
             justify-content: flex-end;
+            flex-wrap: wrap;
         }
         .modal-buttons button {
             padding: 10px 24px;
@@ -122,28 +138,44 @@
             border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
             font-size: 0.9em;
         }
-        .historial-item .fecha { color: var(--text-muted); font-size: 0.8em; }
-        .resumen-cierre {
-            background: var(--bg-primary);
-            padding: 16px;
+        .notificacion {
+            padding: 12px 16px;
             border-radius: var(--radius-sm);
-            margin: 12px 0;
+            margin-bottom: 8px;
+            border-left: 4px solid;
         }
-        .resumen-cierre .linea {
+        .notificacion.info { border-color: var(--accent-cyan); background: rgba(6, 182, 212, 0.1); }
+        .notificacion.warning { border-color: var(--warning); background: rgba(245, 158, 11, 0.1); }
+        .notificacion.error { border-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        .notificacion.success { border-color: var(--success); background: rgba(34, 197, 94, 0.1); }
+        .notificacion .fecha { font-size: 0.8em; color: var(--text-muted); }
+        .tabs {
             display: flex;
-            justify-content: space-between;
-            padding: 4px 0;
-            border-bottom: 1px solid var(--border-color);
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
         }
-        .resumen-cierre .linea.total {
-            font-weight: 700;
-            font-size: 1.1em;
-            border-bottom: none;
-            border-top: 2px solid var(--border-color);
-            padding-top: 8px;
+        .tabs button {
+            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
         }
+        .tabs button.active {
+            background: var(--accent-purple);
+            color: white;
+            border-color: var(--accent-purple);
+        }
+        .tabs button:hover { opacity: 0.8; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
 <body>
@@ -157,7 +189,7 @@
                 <a href="recetas.html"><i class="fas fa-utensils"></i> Recetas</a>
                 <a href="inventario.html"><i class="fas fa-warehouse"></i> Inventario</a>
                 <a href="nomina.html"><i class="fas fa-coins"></i> Nómina</a>
-                <a href="cierre_caja.html"><i class="fas fa-cash-register"></i> Cierre Caja</a>
+                <a href="cierre_caja.html"><i class="fas fa-cash-register"></i> Caja Registradora</a>
                 <a href="usuarios.html"><i class="fas fa-users"></i> Usuarios</a>
                 <a href="configuracion.html"><i class="fas fa-cog"></i> Configuración</a>
                 <a href="#" id="logoutBtn" class="logout"><i class="fas fa-sign-out-alt"></i> Salir</a>
@@ -166,20 +198,29 @@
 
         <main class="main-content">
             <div class="top-bar">
-                <h1><i class="fas fa-cash-register" style="color: var(--accent-cyan);"></i> Cierre de Caja</h1>
-                <button class="btn-caja btn-abrir" id="btnAbrirCaja">
-                    <i class="fas fa-unlock"></i> Abrir Caja
-                </button>
+                <h1><i class="fas fa-cash-register" style="color: var(--accent-cyan);"></i> Caja Registradora</h1>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn-caja btn-abrir" id="btnAbrirCaja">
+                        <i class="fas fa-unlock"></i> Abrir Caja
+                    </button>
+                    <button class="btn-caja btn-excel" id="btnExportarExcel" style="display:none;">
+                        <i class="fas fa-file-excel"></i> Excel
+                    </button>
+                </div>
             </div>
 
-            <!-- Estado actual de la caja -->
+            <!-- Caja Actual -->
             <div id="cajaActual" class="caja-card">
                 <div class="header">
                     <div>
-                        <h3 style="color: var(--text-primary);">Caja Principal</h3>
+                        <h3 style="color: var(--text-primary);" id="nombreCaja">Caja Principal</h3>
                         <span class="estado" id="estadoCaja">CERRADA</span>
+                        <span style="color: var(--text-muted); font-size: 0.8em; margin-left: 12px;" id="infoSesion"></span>
                     </div>
-                    <div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn-caja btn-arqueo" id="btnArqueo" style="display:none;">
+                            <i class="fas fa-coins"></i> Arqueo
+                        </button>
                         <button class="btn-caja btn-imprimir" id="btnImprimir" style="display:none;">
                             <i class="fas fa-print"></i> Imprimir
                         </button>
@@ -194,12 +235,16 @@
                         <div class="valor" id="saldoInicial">$0.00</div>
                     </div>
                     <div class="item">
-                        <div class="etiqueta">Ventas Hoy</div>
+                        <div class="etiqueta">Ventas</div>
                         <div class="valor positivo" id="ventasHoy">$0.00</div>
                     </div>
                     <div class="item">
                         <div class="etiqueta">Gastos</div>
                         <div class="valor negativo" id="gastosHoy">-$0.00</div>
+                    </div>
+                    <div class="item">
+                        <div class="etiqueta">Ingresos Extras</div>
+                        <div class="valor positivo" id="ingresosExtra">$0.00</div>
                     </div>
                     <div class="item">
                         <div class="etiqueta">Saldo Esperado</div>
@@ -216,42 +261,85 @@
                 </div>
                 <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
                     <button class="btn-caja btn-gasto" id="btnAgregarGasto" style="display:none;">
-                        <i class="fas fa-minus-circle"></i> Agregar Gasto
+                        <i class="fas fa-minus-circle"></i> Gasto
                     </button>
-                    <button class="btn-caja btn-gasto" id="btnAgregarIngreso" style="display:none;">
-                        <i class="fas fa-plus-circle"></i> Agregar Ingreso Extra
+                    <button class="btn-caja btn-ingreso" id="btnAgregarIngreso" style="display:none;">
+                        <i class="fas fa-plus-circle"></i> Ingreso Extra
+                    </button>
+                    <button class="btn-caja" id="btnActualizar" style="background: var(--accent-blue); color: white; display:none;">
+                        <i class="fas fa-sync"></i> Actualizar
                     </button>
                 </div>
             </div>
 
-            <!-- Gastos del día -->
-            <div class="caja-card" id="gastosContainer" style="display:none;">
+            <!-- Notificaciones -->
+            <div id="notificacionesContainer" class="caja-card" style="display:none;">
                 <h3 style="color: var(--text-secondary); margin-bottom:12px;">
-                    <i class="fas fa-receipt"></i> Gastos del Día
+                    <i class="fas fa-bell"></i> Notificaciones
                 </h3>
-                <div id="listaGastos">
-                    <div style="color: var(--text-muted);">No hay gastos registrados</div>
+                <div id="listaNotificaciones"></div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="active" data-tab="movimientos">📋 Movimientos</button>
+                <button data-tab="arqueo">🪙 Arqueo</button>
+                <button data-tab="historial">📜 Historial</button>
+            </div>
+
+            <!-- Tab: Movimientos -->
+            <div id="tabMovimientos" class="tab-content active">
+                <div class="caja-card">
+                    <h3 style="color: var(--text-secondary); margin-bottom:12px;">
+                        <i class="fas fa-list"></i> Movimientos del Día
+                    </h3>
+                    <div id="listaMovimientos">
+                        <div style="color: var(--text-muted);">No hay movimientos registrados</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Historial de cierres -->
-            <div class="caja-card">
-                <h3 style="color: var(--text-secondary); margin-bottom:12px;">
-                    <i class="fas fa-history"></i> Historial de Cierres
-                </h3>
-                <div id="historialCierres">
-                    <div style="color: var(--text-muted);">Cargando historial...</div>
+            <!-- Tab: Arqueo -->
+            <div id="tabArqueo" class="tab-content">
+                <div class="caja-card">
+                    <h3 style="color: var(--text-secondary); margin-bottom:12px;">
+                        <i class="fas fa-coins"></i> Arqueo de Caja
+                    </h3>
+                    <p style="color: var(--text-muted); font-size: 0.9em; margin-bottom:16px;">
+                        Registra la cantidad de billetes y monedas para cuadrar la caja.
+                    </p>
+                    <div id="arqueoContainer">
+                        <div style="color: var(--text-muted);">No hay arqueo registrado</div>
+                    </div>
+                    <button class="btn-caja btn-arqueo" id="btnAgregarArqueo" style="display:none;">
+                        <i class="fas fa-plus"></i> Agregar Arqueo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab: Historial -->
+            <div id="tabHistorial" class="tab-content">
+                <div class="caja-card">
+                    <h3 style="color: var(--text-secondary); margin-bottom:12px;">
+                        <i class="fas fa-history"></i> Historial de Cierres
+                    </h3>
+                    <div id="historialCierres">
+                        <div style="color: var(--text-muted);">Cargando historial...</div>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- ========== MODALES ========== -->
+
     <!-- Modal: Abrir Caja -->
     <div id="modalAbrir" class="modal">
         <div class="modal-content">
             <h3><i class="fas fa-unlock"></i> Abrir Caja</h3>
+            <input type="text" id="nombreCajaInput" placeholder="Nombre de la caja (ej: Caja Principal)" value="Caja Principal">
             <input type="number" id="saldoInicialInput" placeholder="Saldo inicial" step="0.01">
-            <input type="text" id="observacionesAbrir" placeholder="Observaciones (opcional)">
+            <textarea id="observacionesAbrir" placeholder="Observaciones (opcional)" rows="2"></textarea>
             <div class="modal-buttons">
                 <button class="btn-guardar-modal" id="btnConfirmarAbrir">Abrir Caja</button>
                 <button class="btn-cerrar-modal" id="btnCancelarAbrir">Cancelar</button>
@@ -265,9 +353,9 @@
             <h3><i class="fas fa-lock"></i> Cerrar Caja</h3>
             <div id="resumenCierre" class="resumen-cierre">
                 <div class="linea"><span>Saldo Inicial</span><span id="rSaldoInicial">$0.00</span></div>
-                <div class="linea"><span>Ventas del día</span><span id="rVentas">$0.00</span></div>
+                <div class="linea"><span>Ventas</span><span id="rVentas">$0.00</span></div>
                 <div class="linea"><span>Gastos</span><span id="rGastos">-$0.00</span></div>
-                <div class="linea"><span>Ingresos extras</span><span id="rIngresos">$0.00</span></div>
+                <div class="linea"><span>Ingresos Extras</span><span id="rIngresos">$0.00</span></div>
                 <div class="linea total"><span>Saldo Esperado</span><span id="rSaldoEsperado">$0.00</span></div>
                 <div style="margin-top:12px;">
                     <label style="color: var(--text-secondary);">Saldo Real (dinero contado)</label>
@@ -277,7 +365,7 @@
                     <span>Diferencia</span>
                     <span id="rDiferencia" style="font-weight:700;">$0.00</span>
                 </div>
-                <input type="text" id="observacionesCerrar" placeholder="Observaciones (opcional)" style="width:100%; padding:10px; margin-top:8px; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text-primary);">
+                <textarea id="observacionesCerrar" placeholder="Observaciones (opcional)" rows="2" style="width:100%; padding:10px; margin-top:8px; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text-primary);"></textarea>
             </div>
             <div class="modal-buttons">
                 <button class="btn-guardar-modal" id="btnConfirmarCerrar">Cerrar Caja</button>
@@ -289,7 +377,7 @@
     <!-- Modal: Agregar Gasto -->
     <div id="modalGasto" class="modal">
         <div class="modal-content">
-            <h3><i class="fas fa-minus-circle"></i> Agregar Gasto</h3>
+            <h3><i class="fas fa-minus-circle"></i> Registrar Gasto</h3>
             <input type="text" id="conceptoGasto" placeholder="Concepto (ej: Compra de harina)">
             <input type="number" id="montoGasto" placeholder="Monto" step="0.01">
             <select id="categoriaGasto">
@@ -298,6 +386,7 @@
                 <option value="transporte">Transporte</option>
                 <option value="otros">Otros</option>
             </select>
+            <input type="text" id="comprobanteGasto" placeholder="Comprobante (opcional)">
             <div class="modal-buttons">
                 <button class="btn-guardar-modal" id="btnConfirmarGasto">Agregar</button>
                 <button class="btn-cerrar-modal" id="btnCancelarGasto">Cancelar</button>
@@ -305,15 +394,43 @@
         </div>
     </div>
 
-    <!-- Modal: Agregar Ingreso Extra -->
+    <!-- Modal: Ingreso Extra -->
     <div id="modalIngreso" class="modal">
         <div class="modal-content">
-            <h3><i class="fas fa-plus-circle"></i> Agregar Ingreso Extra</h3>
-            <input type="text" id="conceptoIngreso" placeholder="Concepto (ej: Venta extra)">
+            <h3><i class="fas fa-plus-circle"></i> Registrar Ingreso Extra</h3>
+            <input type="text" id="conceptoIngreso" placeholder="Concepto (ej: Devolución de préstamo)">
             <input type="number" id="montoIngreso" placeholder="Monto" step="0.01">
+            <input type="text" id="comprobanteIngreso" placeholder="Comprobante (opcional)">
             <div class="modal-buttons">
                 <button class="btn-guardar-modal" id="btnConfirmarIngreso">Agregar</button>
                 <button class="btn-cerrar-modal" id="btnCancelarIngreso">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Arqueo -->
+    <div id="modalArqueo" class="modal">
+        <div class="modal-content">
+            <h3><i class="fas fa-coins"></i> Arqueo de Caja</h3>
+            <p style="color: var(--text-muted); font-size: 0.9em; margin-bottom:16px;">
+                Registra cuántos billetes y monedas hay en la caja.
+            </p>
+            <div id="arqueoForm">
+                <div class="arqueo-grid" id="arqueoGrid">
+                    <input type="number" id="denom1" placeholder="Denominación" step="0.01" value="1000">
+                    <input type="number" id="cant1" placeholder="Cantidad" min="0">
+                    <select id="tipo1">
+                        <option value="billete">Billete</option>
+                        <option value="moneda">Moneda</option>
+                    </select>
+                </div>
+                <button class="btn-caja" id="btnAgregarFilaArqueo" style="background: var(--accent-cyan); color: var(--bg-primary); width:100%; margin-bottom:12px;">
+                    <i class="fas fa-plus"></i> Agregar fila
+                </button>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-guardar-modal" id="btnConfirmarArqueo">Guardar Arqueo</button>
+                <button class="btn-cerrar-modal" id="btnCancelarArqueo">Cancelar</button>
             </div>
         </div>
     </div>
@@ -322,6 +439,22 @@
         const API_URL = 'https://lumire-erp-backend.onrender.com/api';
         let token = localStorage.getItem('token');
         let sesionActual = null;
+        let arqueoData = [];
+
+        // ========== FUNCIONES DE UTILIDAD ==========
+        function formatCurrency(amount) {
+            return `$${parseFloat(amount || 0).toFixed(2)}`;
+        }
+
+        function getTipoClass(tipo) {
+            const classes = {
+                'venta': 'tipo-venta',
+                'gasto': 'tipo-gasto',
+                'ingreso_extra': 'tipo-ingreso',
+                'ajuste': 'tipo-venta'
+            };
+            return classes[tipo] || '';
+        }
 
         // ========== CERRAR SESIÓN ==========
         document.getElementById('logoutBtn')?.addEventListener('click', () => {
@@ -329,7 +462,17 @@
             window.location.href = 'index.html';
         });
 
-        // ========== CARGAR ESTADO DE CAJA ==========
+        // ========== TABS ==========
+        document.querySelectorAll('.tabs button').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tabs button').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+                document.getElementById(`tab${this.dataset.tab.charAt(0).toUpperCase() + this.dataset.tab.slice(1)}`).classList.add('active');
+            });
+        });
+
+        // ========== CARGAR CAJA ==========
         async function cargarCaja() {
             try {
                 const res = await fetch(`${API_URL}/caja/estado`, {
@@ -342,7 +485,12 @@
                 const btnCerrar = document.getElementById('btnCerrarCaja');
                 const btnGasto = document.getElementById('btnAgregarGasto');
                 const btnIngreso = document.getElementById('btnAgregarIngreso');
-                const gastosContainer = document.getElementById('gastosContainer');
+                const btnArqueo = document.getElementById('btnArqueo');
+                const btnImprimir = document.getElementById('btnImprimir');
+                const btnActualizar = document.getElementById('btnActualizar');
+                const btnExcel = document.getElementById('btnExportarExcel');
+                const infoSesion = document.getElementById('infoSesion');
+                const nombreCaja = document.getElementById('nombreCaja');
                 
                 if (data.estado === 'abierta') {
                     estado.textContent = 'ABIERTA';
@@ -351,35 +499,101 @@
                     btnCerrar.style.display = 'inline-block';
                     btnGasto.style.display = 'inline-block';
                     btnIngreso.style.display = 'inline-block';
-                    gastosContainer.style.display = 'block';
+                    btnArqueo.style.display = 'inline-block';
+                    btnImprimir.style.display = 'inline-block';
+                    btnActualizar.style.display = 'inline-block';
+                    btnExcel.style.display = 'inline-block';
                     sesionActual = data.sesion;
                     
-                    document.getElementById('saldoInicial').textContent = `$${data.sesion.saldo_inicial || 0}`;
-                    document.getElementById('ventasHoy').textContent = `$${data.ventas_hoy || 0}`;
-                    document.getElementById('gastosHoy').textContent = `-$${data.gastos_hoy || 0}`;
-                    document.getElementById('saldoEsperado').textContent = `$${data.saldo_esperado || 0}`;
-                    document.getElementById('saldoReal').textContent = `$${data.saldo_real || 0}`;
+                    const fecha = new Date(data.sesion.fecha_apertura);
+                    infoSesion.textContent = `Apertura: ${fecha.toLocaleString('es-CU')}`;
+                    nombreCaja.textContent = data.sesion.caja_nombre || 'Caja Principal';
+                    
+                    document.getElementById('saldoInicial').textContent = formatCurrency(data.sesion.saldo_inicial);
+                    document.getElementById('ventasHoy').textContent = formatCurrency(data.ventas_hoy);
+                    document.getElementById('gastosHoy').textContent = formatCurrency(-data.gastos_hoy);
+                    document.getElementById('ingresosExtra').textContent = formatCurrency(data.ingresos_extra || 0);
+                    document.getElementById('saldoEsperado').textContent = formatCurrency(data.saldo_esperado);
+                    document.getElementById('saldoReal').textContent = formatCurrency(data.saldo_real || 0);
                     
                     const diff = (data.saldo_real || 0) - (data.saldo_esperado || 0);
                     const diffEl = document.getElementById('diferencia');
-                    diffEl.textContent = `$${diff}`;
+                    diffEl.textContent = formatCurrency(diff);
                     diffEl.className = 'valor ' + (diff >= 0 ? 'positivo' : 'negativo');
                     
-                    // Cargar gastos
-                    if (data.gastos && data.gastos.length > 0) {
+                    // Movimientos
+                    if (data.movimientos && data.movimientos.length > 0) {
                         let html = '';
-                        data.gastos.forEach(g => {
+                        data.movimientos.forEach(m => {
+                            const tipoLabel = {
+                                'venta': '💰 Venta',
+                                'gasto': '💸 Gasto',
+                                'ingreso_extra': '💵 Ingreso Extra',
+                                'ajuste': '🔧 Ajuste'
+                            }[m.tipo] || m.tipo;
                             html += `
-                                <div class="gasto-item">
-                                    <span>${g.concepto} <span style="color:var(--text-muted);font-size:0.8em;">${g.categoria}</span></span>
-                                    <span style="color:var(--danger);">-$${g.monto}</span>
+                                <div class="movimiento-item">
+                                    <div>
+                                        <span class="${getTipoClass(m.tipo)}">${tipoLabel}</span>
+                                        <span>${m.concepto}</span>
+                                        ${m.categoria ? `<span style="color:var(--text-muted);font-size:0.8em;">${m.categoria}</span>` : ''}
+                                        <span style="color:var(--text-muted);font-size:0.8em;">${new Date(m.fecha).toLocaleTimeString('es-CU')}</span>
+                                    </div>
+                                    <span style="font-weight:600; ${m.tipo === 'gasto' ? 'color:var(--danger)' : 'color:var(--success)'}">
+                                        ${m.tipo === 'gasto' ? '-' : '+'}$${Math.abs(m.monto)}
+                                    </span>
                                 </div>
                             `;
                         });
-                        document.getElementById('listaGastos').innerHTML = html;
+                        document.getElementById('listaMovimientos').innerHTML = html;
                     } else {
-                        document.getElementById('listaGastos').innerHTML = '<div style="color: var(--text-muted);">No hay gastos registrados</div>';
+                        document.getElementById('listaMovimientos').innerHTML = '<div style="color: var(--text-muted);">No hay movimientos registrados</div>';
                     }
+                    
+                    // Notificaciones
+                    if (data.notificaciones && data.notificaciones.length > 0) {
+                        const notifContainer = document.getElementById('notificacionesContainer');
+                        notifContainer.style.display = 'block';
+                        let html = '';
+                        data.notificaciones.forEach(n => {
+                            html += `
+                                <div class="notificacion ${n.tipo}">
+                                    <div>
+                                        <strong>${n.mensaje}</strong>
+                                        <div class="fecha">${new Date(n.fecha).toLocaleString('es-CU')}</div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        document.getElementById('listaNotificaciones').innerHTML = html;
+                    } else {
+                        document.getElementById('notificacionesContainer').style.display = 'none';
+                    }
+                    
+                    // Arqueo
+                    if (data.arqueo && data.arqueo.length > 0) {
+                        let html = '';
+                        let totalArqueo = 0;
+                        data.arqueo.forEach(a => {
+                            totalArqueo += a.total;
+                            html += `
+                                <div class="movimiento-item">
+                                    <span>${a.cantidad} × ${formatCurrency(a.denominacion)} (${a.tipo})</span>
+                                    <span>${formatCurrency(a.total)}</span>
+                                </div>
+                            `;
+                        });
+                        html += `
+                            <div class="movimiento-item" style="font-weight:700; border-top:2px solid var(--border-color); padding-top:12px; margin-top:8px;">
+                                <span>TOTAL ARQUEO</span>
+                                <span>${formatCurrency(totalArqueo)}</span>
+                            </div>
+                        `;
+                        document.getElementById('arqueoContainer').innerHTML = html;
+                    } else {
+                        document.getElementById('arqueoContainer').innerHTML = '<div style="color: var(--text-muted);">No hay arqueo registrado</div>';
+                    }
+                    
                 } else {
                     estado.textContent = 'CERRADA';
                     estado.className = 'estado cerrada';
@@ -387,16 +601,25 @@
                     btnCerrar.style.display = 'none';
                     btnGasto.style.display = 'none';
                     btnIngreso.style.display = 'none';
-                    gastosContainer.style.display = 'none';
+                    btnArqueo.style.display = 'none';
+                    btnImprimir.style.display = 'none';
+                    btnActualizar.style.display = 'none';
+                    btnExcel.style.display = 'none';
                     sesionActual = null;
+                    infoSesion.textContent = '';
+                    nombreCaja.textContent = 'Caja Principal';
                     
                     document.getElementById('saldoInicial').textContent = '$0.00';
                     document.getElementById('ventasHoy').textContent = '$0.00';
                     document.getElementById('gastosHoy').textContent = '-$0.00';
+                    document.getElementById('ingresosExtra').textContent = '$0.00';
                     document.getElementById('saldoEsperado').textContent = '$0.00';
                     document.getElementById('saldoReal').textContent = '$0.00';
                     document.getElementById('diferencia').textContent = '$0.00';
                     document.getElementById('diferencia').className = 'valor';
+                    document.getElementById('listaMovimientos').innerHTML = '<div style="color: var(--text-muted);">No hay movimientos registrados</div>';
+                    document.getElementById('arqueoContainer').innerHTML = '<div style="color: var(--text-muted);">No hay arqueo registrado</div>';
+                    document.getElementById('notificacionesContainer').style.display = 'none';
                 }
                 
                 cargarHistorial();
@@ -424,6 +647,7 @@
                 data.forEach(c => {
                     const fecha = new Date(c.fecha_cierre).toLocaleDateString('es-CU');
                     const hora = new Date(c.fecha_cierre).toLocaleTimeString('es-CU');
+                    const diff = (c.saldo_real || 0) - (c.saldo_esperado || 0);
                     html += `
                         <div class="historial-item">
                             <div>
@@ -432,9 +656,12 @@
                                 <div style="color:var(--text-muted);font-size:0.8em;">${c.observaciones || ''}</div>
                             </div>
                             <div style="text-align:right;">
-                                <div>Ventas: $${c.total_ventas || 0}</div>
-                                <div>Gastos: -$${c.total_gastos || 0}</div>
-                                <div style="font-weight:700;">Total: $${c.saldo_esperado || 0}</div>
+                                <div>Ventas: ${formatCurrency(c.total_ventas || 0)}</div>
+                                <div>Gastos: ${formatCurrency(-(c.total_gastos || 0))}</div>
+                                <div style="font-weight:700;">Total: ${formatCurrency(c.saldo_esperado || 0)}</div>
+                                <div style="color: ${diff >= 0 ? 'var(--success)' : 'var(--danger)'}">
+                                    ${diff >= 0 ? '✅' : '❌'} ${formatCurrency(diff)}
+                                </div>
                             </div>
                         </div>
                     `;
@@ -458,6 +685,7 @@
         });
 
         document.getElementById('btnConfirmarAbrir')?.addEventListener('click', async () => {
+            const nombre = document.getElementById('nombreCajaInput').value || 'Caja Principal';
             const saldo = parseFloat(document.getElementById('saldoInicialInput').value) || 0;
             const obs = document.getElementById('observacionesAbrir').value;
             
@@ -469,6 +697,7 @@
                         'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({
+                        nombre: nombre,
                         saldo_inicial: saldo,
                         observaciones: obs
                     })
@@ -494,11 +723,11 @@
                 });
                 const data = await res.json();
                 
-                document.getElementById('rSaldoInicial').textContent = `$${data.saldo_inicial || 0}`;
-                document.getElementById('rVentas').textContent = `$${data.ventas || 0}`;
-                document.getElementById('rGastos').textContent = `-$${data.gastos || 0}`;
-                document.getElementById('rIngresos').textContent = `$${data.ingresos_extra || 0}`;
-                document.getElementById('rSaldoEsperado').textContent = `$${data.saldo_esperado || 0}`;
+                document.getElementById('rSaldoInicial').textContent = formatCurrency(data.saldo_inicial);
+                document.getElementById('rVentas').textContent = formatCurrency(data.ventas);
+                document.getElementById('rGastos').textContent = formatCurrency(-data.gastos);
+                document.getElementById('rIngresos').textContent = formatCurrency(data.ingresos_extra || 0);
+                document.getElementById('rSaldoEsperado').textContent = formatCurrency(data.saldo_esperado);
                 document.getElementById('saldoRealInput').value = '';
                 document.getElementById('observacionesCerrar').value = '';
                 document.getElementById('rDiferencia').textContent = '$0.00';
@@ -518,7 +747,7 @@
             const saldoReal = parseFloat(this.value) || 0;
             const diff = saldoReal - saldoEsperado;
             const diffEl = document.getElementById('rDiferencia');
-            diffEl.textContent = `$${diff}`;
+            diffEl.textContent = formatCurrency(diff);
             diffEl.style.color = diff >= 0 ? 'var(--success)' : 'var(--danger)';
         });
 
@@ -556,11 +785,12 @@
             }
         });
 
-        // ========== AGREGAR GASTO ==========
+        // ========== GASTO ==========
         document.getElementById('btnAgregarGasto')?.addEventListener('click', () => {
             document.getElementById('modalGasto').classList.add('active');
             document.getElementById('conceptoGasto').value = '';
             document.getElementById('montoGasto').value = '';
+            document.getElementById('comprobanteGasto').value = '';
             document.getElementById('conceptoGasto').focus();
         });
 
@@ -572,6 +802,7 @@
             const concepto = document.getElementById('conceptoGasto').value;
             const monto = parseFloat(document.getElementById('montoGasto').value);
             const categoria = document.getElementById('categoriaGasto').value;
+            const comprobante = document.getElementById('comprobanteGasto').value;
             
             if (!concepto || !monto) {
                 alert('Completa todos los campos');
@@ -588,7 +819,8 @@
                     body: JSON.stringify({
                         concepto: concepto,
                         monto: monto,
-                        categoria: categoria
+                        categoria: categoria,
+                        comprobante: comprobante
                     })
                 });
                 if (res.ok) {
@@ -604,11 +836,12 @@
             }
         });
 
-        // ========== AGREGAR INGRESO EXTRA ==========
+        // ========== INGRESO EXTRA ==========
         document.getElementById('btnAgregarIngreso')?.addEventListener('click', () => {
             document.getElementById('modalIngreso').classList.add('active');
             document.getElementById('conceptoIngreso').value = '';
             document.getElementById('montoIngreso').value = '';
+            document.getElementById('comprobanteIngreso').value = '';
             document.getElementById('conceptoIngreso').focus();
         });
 
@@ -619,6 +852,7 @@
         document.getElementById('btnConfirmarIngreso')?.addEventListener('click', async () => {
             const concepto = document.getElementById('conceptoIngreso').value;
             const monto = parseFloat(document.getElementById('montoIngreso').value);
+            const comprobante = document.getElementById('comprobanteIngreso').value;
             
             if (!concepto || !monto) {
                 alert('Completa todos los campos');
@@ -634,7 +868,8 @@
                     },
                     body: JSON.stringify({
                         concepto: concepto,
-                        monto: monto
+                        monto: monto,
+                        comprobante: comprobante
                     })
                 });
                 if (res.ok) {
@@ -650,7 +885,121 @@
             }
         });
 
-        // Cerrar modales al hacer clic fuera
+        // ========== ARQUEO ==========
+        document.getElementById('btnAgregarArqueo')?.addEventListener('click', () => {
+            document.getElementById('modalArqueo').classList.add('active');
+            arqueoData = [];
+            // Limpiar y agregar una fila por defecto
+            const grid = document.getElementById('arqueoGrid');
+            grid.innerHTML = '';
+            agregarFilaArqueo();
+        });
+
+        function agregarFilaArqueo() {
+            const grid = document.getElementById('arqueoGrid');
+            const row = document.createElement('div');
+            row.className = 'arqueo-grid';
+            const idx = grid.children.length + 1;
+            row.innerHTML = `
+                <input type="number" placeholder="Denominación" step="0.01" value="${idx === 1 ? 1000 : idx === 2 ? 500 : idx === 3 ? 200 : 100}">
+                <input type="number" placeholder="Cantidad" min="0">
+                <select>
+                    <option value="billete">Billete</option>
+                    <option value="moneda">Moneda</option>
+                </select>
+                <button class="btn-caja" onclick="this.parentElement.remove()" style="background:var(--danger);color:white;padding:4px 8px;grid-column:span 3;width:100%;">
+                    <i class="fas fa-times"></i> Eliminar
+                </button>
+            `;
+            grid.appendChild(row);
+        }
+
+        document.getElementById('btnAgregarFilaArqueo')?.addEventListener('click', agregarFilaArqueo);
+
+        document.getElementById('btnCancelarArqueo')?.addEventListener('click', () => {
+            document.getElementById('modalArqueo').classList.remove('active');
+        });
+
+        document.getElementById('btnConfirmarArqueo')?.addEventListener('click', async () => {
+            const rows = document.querySelectorAll('#arqueoGrid .arqueo-grid');
+            const arqueo = [];
+            let total = 0;
+            
+            rows.forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                const select = row.querySelector('select');
+                const denominacion = parseFloat(inputs[0].value);
+                const cantidad = parseInt(inputs[1].value) || 0;
+                const tipo = select.value;
+                if (denominacion > 0 && cantidad > 0) {
+                    arqueo.push({ denominacion, cantidad, tipo });
+                    total += denominacion * cantidad;
+                }
+            });
+            
+            if (arqueo.length === 0) {
+                alert('Agrega al menos una denominación con cantidad');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_URL}/caja/arqueo`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ arqueo })
+                });
+                if (res.ok) {
+                    alert(`✅ Arqueo guardado\nTotal: ${formatCurrency(total)}`);
+                    document.getElementById('modalArqueo').classList.remove('active');
+                    cargarCaja();
+                } else {
+                    const error = await res.json();
+                    alert('Error: ' + JSON.stringify(error));
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        });
+
+        // ========== ACTUALIZAR ==========
+        document.getElementById('btnActualizar')?.addEventListener('click', cargarCaja);
+
+        // ========== EXPORTAR EXCEL ==========
+        document.getElementById('btnExportarExcel')?.addEventListener('click', async () => {
+            try {
+                const res = await fetch(`${API_URL}/caja/exportar`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                if (!data.movimientos || data.movimientos.length === 0) {
+                    alert('No hay movimientos para exportar');
+                    return;
+                }
+                
+                // Crear CSV
+                let csv = 'Fecha,Concepto,Tipo,Monto,Categoría,Comprobante\n';
+                data.movimientos.forEach(m => {
+                    csv += `${new Date(m.fecha).toLocaleDateString('es-CU')},${m.concepto},${m.tipo},${m.monto},${m.categoria||''},${m.comprobante||''}\n`;
+                });
+                
+                // Descargar
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `caja_${new Date().toISOString().slice(0,10)}.csv`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } catch (e) {
+                alert('Error exportando');
+            }
+        });
+
+        // ========== CERRAR MODALES AL HACER CLIC FUERA ==========
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) modal.classList.remove('active');
