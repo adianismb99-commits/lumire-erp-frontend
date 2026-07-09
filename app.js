@@ -448,6 +448,12 @@ function show2FAForm(temporal_token) {
                 </button>
             </div>
         </div>
+        <div class="checkbox-group" style="margin: 12px 0;">
+            <input type="checkbox" id="recordarDispositivo">
+            <label for="recordarDispositivo" style="color: var(--text-secondary); font-size: 0.9em;">
+                <i class="fas fa-laptop"></i> Recordar este dispositivo por 15 días
+            </label>
+        </div>
         <button class="btn-primary" id="btnVerificar2fa" style="margin-top: 8px;">
             <i class="fas fa-check"></i> Verificar
         </button>
@@ -470,11 +476,36 @@ function show2FAForm(temporal_token) {
     loginBox.appendChild(div);
     
     // ============================================
+    // CURSOR AUTOMÁTICO EN EL CAMPO DE CÓDIGO
+    // ============================================
+    const codigoInput = document.getElementById('codigo2fa');
+    if (codigoInput) {
+        // Enfocar automáticamente
+        setTimeout(() => {
+            codigoInput.focus();
+        }, 100);
+        
+        // ============================================
+        // VALIDACIÓN AUTOMÁTICA AL ESCRIBIR 6 DÍGITOS
+        // ============================================
+        codigoInput.addEventListener('input', function(e) {
+            const valor = this.value.replace(/\D/g, ''); // Solo números
+            this.value = valor;
+            
+            if (valor.length === 6) {
+                // Ejecutar verificación automáticamente
+                document.getElementById('btnVerificar2fa').click();
+            }
+        });
+    }
+    
+    // ============================================
     // EVENTO: VERIFICAR 2FA
     // ============================================
     document.getElementById('btnVerificar2fa')?.addEventListener('click', async function() {
         const codigo = document.getElementById('codigo2fa').value.trim();
         const errorDiv = document.getElementById('error2fa');
+        const recordar = document.getElementById('recordarDispositivo')?.checked || false;
         
         if (!codigo || codigo.length !== 6) {
             errorDiv.textContent = 'Ingresa los 6 dígitos del código';
@@ -487,7 +518,8 @@ function show2FAForm(temporal_token) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     temporal_token: temporal_token,
-                    codigo: codigo
+                    codigo: codigo,
+                    recordar_dispositivo: recordar
                 })
             });
             
@@ -497,13 +529,15 @@ function show2FAForm(temporal_token) {
                 localStorage.setItem('token', data.access_token);
                 window.location.href = 'dashboard.html';
             } else {
-                // Verificar si es un error de bloqueo (3 intentos fallidos)
                 if (response.status === 403 && data.detail && data.detail.includes('bloqueada')) {
                     document.getElementById('error2fa').style.display = 'none';
                     document.getElementById('bloqueo2fa').style.display = 'block';
                     document.getElementById('errorClave').textContent = '';
                 } else {
                     errorDiv.textContent = data.detail || 'Código inválido';
+                    // Limpiar el campo y enfocar de nuevo
+                    document.getElementById('codigo2fa').value = '';
+                    document.getElementById('codigo2fa').focus();
                 }
             }
         } catch (error) {
@@ -540,7 +574,6 @@ function show2FAForm(temporal_token) {
                 alert('✅ Cuenta desbloqueada. Ahora puedes iniciar sesión.');
                 window.location.reload();
             } else {
-                // Si el error contiene WhatsApp, mostrarlo con formato
                 if (data.detail && data.detail.includes('WhatsApp')) {
                     errorDiv.innerHTML = data.detail.replace(/\n/g, '<br>');
                 } else {
