@@ -232,7 +232,7 @@
         function fechaCuba(fechaISO) {
             if (!fechaISO) return 'Nunca';
             try {
-                const fecha = new Date(fechaISO + 'Z');
+                const fecha = new Date(fechaISO);
                 return fecha.toLocaleString('es-CU', { 
                     timeZone: 'America/Havana',
                     year: 'numeric',
