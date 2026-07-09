@@ -507,7 +507,7 @@ function show2FAForm(temporal_token) {
                 body: JSON.stringify({
                     temporal_token: temporal_token,
                     codigo: codigo,
-                    recordar_dispositivo: true;
+                    recordar_dispositivo: true,
                 })
             });
             
