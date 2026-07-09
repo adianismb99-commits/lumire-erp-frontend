@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Panel de Seguridad - LUMIRE</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+        .security-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.2s;
+        }
+        .security-card:hover {
+            border-color: var(--accent-purple);
+        }
+        .badge-peligro {
+            background: var(--danger);
+            color: white;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+        .badge-warning {
+            background: var(--warning);
+            color: var(--bg-primary);
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+        .badge-exito {
+            background: var(--success);
+            color: white;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+        .ip-item {
+            font-family: monospace;
+            background: var(--bg-primary);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .btn-desbloquear {
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 6px 16px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-desbloquear:hover {
+            opacity: 0.8;
+        }
+        .tabla-logs {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+        .tabla-logs th {
+            text-align: left;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 8px;
+        }
+        .tabla-logs td {
+            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <div style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 24px;">
+            <h1 style="font-size: 1.8em; font-weight: 800;">
+                <span style="background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    🔒 Panel de Seguridad
+                </span>
+            </h1>
+            <span style="color: var(--text-muted); font-size: 0.9em;">
+                <i class="fas fa-clock"></i> <span id="horaActual"></span>
+            </span>
+        </div>
+
+        <!-- Resumen -->
+        <div class="security-card" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
+            <div>
+                <div style="color: var(--text-muted); font-size: 0.8em;">Total usuarios</div>
+                <div style="font-size: 1.8em; font-weight: 700;" id="totalUsuarios">0</div>
+            </div>
+            <div>
+                <div style="color: var(--text-muted); font-size: 0.8em;">Bloqueados</div>
+                <div style="font-size: 1.8em; font-weight: 700; color: var(--danger);" id="totalBloqueados">0</div>
+            </div>
+            <div>
+                <div style="color: var(--text-muted); font-size: 0.8em;">Intentos fallidos (24h)</div>
+                <div style="font-size: 1.8em; font-weight: 700; color: var(--warning);" id="totalIntentos">0</div>
+            </div>
+            <div>
+                <div style="color: var(--text-muted); font-size: 0.8em;">Activos ahora</div>
+                <div style="font-size: 1.8em; font-weight: 700; color: var(--success);" id="totalActivos">0</div>
+            </div>
+        </div>
+
+        <!-- Bloqueados permanentemente -->
+        <div class="security-card">
+            <h3><i class="fas fa-ban" style="color: var(--danger);"></i> Usuarios Bloqueados Permanentemente</h3>
+            <div id="listaBloqueados">
+                <div style="color: var(--text-muted);">Cargando...</div>
+            </div>
+        </div>
+
+        <!-- Intentos fallidos recientes -->
+        <div class="security-card">
+            <h3><i class="fas fa-exclamation-triangle" style="color: var(--warning);"></i> Intentos Fallidos (última hora)</h3>
+            <div id="listaIntentos">
+                <div style="color: var(--text-muted);">Cargando...</div>
+            </div>
+        </div>
+
+        <!-- Logs de actividad -->
+        <div class="security-card">
+            <h3><i class="fas fa-history" style="color: var(--accent-cyan);"></i> Actividad Reciente</h3>
+            <div id="logsActividad">
+                <div style="color: var(--text-muted);">Cargando...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://lumire-erp-backend.onrender.com/api';
+        const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZW1wcmVzYV9pZCI6MSwicm9sZSI6MSwiZXhwIjoxNzgyNTQ3NDY4fQ.74rmaMDQRWfqEo3Vgq1mRH1k0p46h5nOhI6Ydg8PG1k';
+
+        // ========== FUNCIONES ==========
+
+        async function cargarDatos() {
+            await cargarBloqueados();
+            await cargarIntentos();
+            await cargarLogs();
+            await cargarResumen();
+        }
+
+        async function cargarBloqueados() {
+            try {
+                const res = await fetch(`${API_URL}/seguridad/bloqueados`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                const data = await res.json();
+                const container = document.getElementById('listaBloqueados');
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted);">No hay usuarios bloqueados</div>';
+                    return;
+                }
+                let html = '';
+                data.forEach(b => {
+                    html += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                            <div>
+                                <strong>${b.email}</strong>
+                                <span class="badge-peligro">PERMANENTE</span>
+                                <div style="color: var(--text-muted); font-size: 0.8em;">${b.motivo}</div>
+                            </div>
+                            <button class="btn-desbloquear" onclick="desbloquearUsuario('${b.email}')">
+                                <i class="fas fa-unlock"></i> Desbloquear
+                            </button>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (e) {
+                console.error('Error cargando bloqueados:', e);
+            }
+        }
+
+        async function cargarIntentos() {
+            try {
+                const res = await fetch(`${API_URL}/seguridad/intentos`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                const data = await res.json();
+                const container = document.getElementById('listaIntentos');
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted);">No hay intentos fallidos recientes</div>';
+                    return;
+                }
+                let html = '';
+                data.forEach(i => {
+                    html += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+                            <div>
+                                <span style="font-weight: 500;">${i.email}</span>
+                                <span class="badge-warning">${i.intentos} intentos</span>
+                                <span style="color: var(--text-muted); font-size: 0.8em;">${i.ip || 'IP desconocida'}</span>
+                            </div>
+                            <div style="color: var(--text-muted); font-size: 0.8em;">
+                                ${new Date(i.fecha).toLocaleTimeString()}
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (e) {
+                console.error('Error cargando intentos:', e);
+            }
+        }
+
+        async function cargarLogs() {
+            try {
+                const res = await fetch(`${API_URL}/seguridad/logs`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                const data = await res.json();
+                const container = document.getElementById('logsActividad');
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted);">No hay actividad reciente</div>';
+                    return;
+                }
+                let html = '<table class="tabla-logs"><tr><th>Usuario</th><th>Acción</th><th>IP</th><th>Fecha</th></tr>';
+                data.forEach(l => {
+                    html += `
+                        <tr>
+                            <td>${l.usuario_email || l.usuario_id}</td>
+                            <td>${l.accion}</td>
+                            <td><span class="ip-item">${l.ip || '-'}</span></td>
+                            <td style="color: var(--text-muted); font-size: 0.8em;">${new Date(l.fecha).toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+                html += '</table>';
+                container.innerHTML = html;
+            } catch (e) {
+                console.error('Error cargando logs:', e);
+            }
+        }
+
+        async function cargarResumen() {
+            try {
+                const res = await fetch(`${API_URL}/seguridad/resumen`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                const data = await res.json();
+                document.getElementById('totalUsuarios').textContent = data.total_usuarios || 0;
+                document.getElementById('totalBloqueados').textContent = data.total_bloqueados || 0;
+                document.getElementById('totalIntentos').textContent = data.total_intentos || 0;
+                document.getElementById('totalActivos').textContent = data.total_activos || 0;
+            } catch (e) {
+                console.error('Error cargando resumen:', e);
+            }
+        }
+
+        async function desbloquearUsuario(email) {
+            if (!confirm(`¿Desbloquear a ${email}?`)) return;
+            try {
+                const res = await fetch(`${API_URL}/seguridad/desbloquear`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${TOKEN}`
+                    },
+                    body: JSON.stringify({ email })
+                });
+                if (res.ok) {
+                    alert('Usuario desbloqueado');
+                    cargarDatos();
+                } else {
+                    const error = await res.json();
+                    alert('Error: ' + JSON.stringify(error));
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        }
+
+        // ========== RELOJ EN TIEMPO REAL ==========
+
+        function actualizarReloj() {
+            document.getElementById('horaActual').textContent = new Date().toLocaleString();
+        }
+        setInterval(actualizarReloj, 1000);
+        actualizarReloj();
+
+        // ========== RECARGAR DATOS AUTOMÁTICAMENTE ==========
+
+        cargarDatos();
+        setInterval(cargarDatos, 30000); // Cada 30 segundos
+    </script>
+</body>
+</html>
