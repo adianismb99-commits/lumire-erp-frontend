@@ -428,7 +428,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function show2FAForm(temporal_token) {
     const loginBox = document.querySelector('.login-box');
-    
+    console.log('🔍 recordar_dispositivo enviado:', recordar);
     // Ocultar TODO el login anterior
     document.querySelectorAll('.input-group, .checkbox-group, #loginBtn, .subtitle').forEach(el => {
         if (el) el.style.display = 'none';
