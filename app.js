@@ -423,12 +423,12 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================
-// FUNCIÓN show2FAForm (VERSIÓN MEJORADA)
+// FUNCIÓN show2FAForm (VERSIÓN CORREGIDA)
 // ============================================
 
 function show2FAForm(temporal_token) {
     const loginBox = document.querySelector('.login-box');
-    console.log('🔍 recordar_dispositivo enviado:', recordar);
+    
     // Ocultar TODO el login anterior
     document.querySelectorAll('.input-group, .checkbox-group, #loginBtn, .subtitle').forEach(el => {
         if (el) el.style.display = 'none';
@@ -482,36 +482,25 @@ function show2FAForm(temporal_token) {
     loginBox.appendChild(div);
     
     // ============================================
-    // CURSOR AUTOMÁTICO Y VALIDACIÓN AUTOMÁTICA
+    // CURSOR AUTOMÁTICO (sin validación automática)
     // ============================================
     const codigoInput = document.getElementById('codigo2fa');
     if (codigoInput) {
-        // Enfocar automáticamente
         setTimeout(() => {
             codigoInput.focus();
         }, 200);
-        
-        // ============================================
-        // VALIDACIÓN AUTOMÁTICA - COMENTADA PARA PRUEBAS
-        // ============================================
-        // codigoInput.addEventListener('input', function(e) {
-        //     const valor = this.value.replace(/\D/g, '');
-        //     this.value = valor;
-        //     if (valor.length === 6) {
-        //         const btn = document.getElementById('btnVerificar2fa');
-        //         if (btn) {
-        //             btn.click();
-        //         }
-        //     }
-        // });
-}
+    }
     
     // ============================================
-    // EVENTO: VERIFICAR 2FA
+    // EVENTO: VERIFICAR 2FA (con botón)
     // ============================================
     document.getElementById('btnVerificar2fa')?.addEventListener('click', async function() {
         const codigo = document.getElementById('codigo2fa').value.trim();
         const errorDiv = document.getElementById('error2fa');
+        const recordar = document.getElementById('recordarDispositivo')?.checked || false;
+        
+        console.log('🔍 Botón Verificar clickeado');
+        console.log('🔍 recordar_dispositivo:', recordar);
         
         if (!codigo || codigo.length !== 6) {
             errorDiv.textContent = 'Ingresa los 6 dígitos del código';
@@ -525,7 +514,7 @@ function show2FAForm(temporal_token) {
                 body: JSON.stringify({
                     temporal_token: temporal_token,
                     codigo: codigo,
-                    recordar_dispositivo: recordar  // ❌ recordar no está definido
+                    recordar_dispositivo: recordar
                 })
             });
             
