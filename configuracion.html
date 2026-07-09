@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>LUMIRE ERP - Configuración</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .config-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .config-section h3 {
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+        }
+        .qr-container {
+            text-align: center;
+            padding: 16px;
+            background: white;
+            border-radius: var(--radius-sm);
+            display: inline-block;
+        }
+        .qr-container img {
+            max-width: 200px;
+        }
+        .codigo-input {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            align-items: center;
+        }
+        .codigo-input input {
+            max-width: 200px;
+        }
+        .btn-2fa {
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-2fa.activo {
+            background: var(--danger);
+        }
+        .btn-2fa:hover {
+            opacity: 0.8;
+        }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        .status-badge.activo {
+            background: var(--success);
+            color: white;
+        }
+        .status-badge.inactivo {
+            background: var(--danger);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">LUMIRE <span>ERP</span></div>
+            <nav>
+                <a href="dashboard.html"><i class="fas fa-chart-pie"></i> Panel de Control</a>
+                <a href="ventas.html"><i class="fas fa-cash-register"></i> Punto de Venta</a>
+                <a href="productos.html"><i class="fas fa-boxes"></i> Productos</a>
+                <a href="recetas.html"><i class="fas fa-utensils"></i> Recetas</a>
+                <a href="inventario.html"><i class="fas fa-warehouse"></i> Inventario</a>
+                <a href="nomina.html"><i class="fas fa-coins"></i> Nómina</a>
+                <a href="usuarios.html"><i class="fas fa-users"></i> Usuarios</a>
+                <a href="configuracion.html" class="active"><i class="fas fa-cog"></i> Configuración</a>
+                <a href="#" id="logoutBtn" class="logout"><i class="fas fa-sign-out-alt"></i> Salir</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <h1><i class="fas fa-cog" style="color: var(--accent-purple);"></i> Configuración</h1>
+                <div class="user-info">
+                    <div class="avatar">A</div>
+                </div>
+            </div>
+
+            <!-- Sección 2FA -->
+            <div class="config-section">
+                <h3><i class="fas fa-shield-alt" style="color: var(--accent-cyan);"></i> Verificación en Dos Pasos (2FA)</h3>
+                <div id="status2fa">
+                    <p style="color: var(--text-secondary);">Cargando estado...</p>
+                </div>
+                <div id="config2fa" style="display: none;">
+                    <div id="qrContainer"></div>
+                    <div class="codigo-input">
+                        <input type="text" id="codigo2fa" placeholder="Código de 6 dígitos" maxlength="6" style="max-width: 200px;">
+                        <button class="btn-2fa" id="btnConfirmar2fa">Confirmar</button>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 0.85em; margin-top: 8px;">
+                        <i class="fas fa-info-circle"></i> Escanea el código QR con Google Authenticator y luego ingresa el código de 6 dígitos.
+                    </p>
+                </div>
+                <div style="margin-top: 12px;">
+                    <button class="btn-2fa" id="btnActivar2fa">Activar 2FA</button>
+                    <button class="btn-2fa activo" id="btnDesactivar2fa" style="display: none;">Desactivar 2FA</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_URL = 'https://lumire-erp-backend.onrender.com/api';
+        let token = localStorage.getItem('token');
+
+        // ========== CERRAR SESIÓN ==========
+        document.getElementById('logoutBtn')?.addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        });
+
+        // ========== VERIFICAR ESTADO 2FA ==========
+        async function verificarEstado2FA() {
+            try {
+                const res = await fetch(`${API_URL}/usuarios/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const user = await res.json();
+                const statusDiv = document.getElementById('status2fa');
+                if (user['2fa_habilitado']) {
+                    statusDiv.innerHTML = `
+                        <p style="color: var(--text-secondary);">
+                            Estado: <span class="status-badge activo">ACTIVO</span>
+                            <span style="margin-left: 16px; font-size: 0.9em;">
+                                Última verificación: ${user.ultima_verificacion_2fa ? new Date(user.ultima_verificacion_2fa).toLocaleString() : 'Nunca'}
+                            </span>
+                        </p>
+                    `;
+                    document.getElementById('btnActivar2fa').style.display = 'none';
+                    document.getElementById('btnDesactivar2fa').style.display = 'inline-block';
+                    document.getElementById('config2fa').style.display = 'none';
+                } else {
+                    statusDiv.innerHTML = `
+                        <p style="color: var(--text-secondary);">
+                            Estado: <span class="status-badge inactivo">INACTIVO</span>
+                            <span style="margin-left: 16px; font-size: 0.9em;">La verificación en dos pasos no está activa.</span>
+                        </p>
+                    `;
+                    document.getElementById('btnActivar2fa').style.display = 'inline-block';
+                    document.getElementById('btnDesactivar2fa').style.display = 'none';
+                    document.getElementById('config2fa').style.display = 'none';
+                }
+            } catch (e) {
+                document.getElementById('status2fa').innerHTML = '<p style="color: var(--danger);">Error al cargar el estado</p>';
+            }
+        }
+
+        // ========== ACTIVAR 2FA ==========
+        document.getElementById('btnActivar2fa')?.addEventListener('click', async function() {
+            try {
+                const res = await fetch(`${API_URL}/auth/enable-2fa`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    // Mostrar QR
+                    const container = document.getElementById('qrContainer');
+                    container.innerHTML = `
+                        <div class="qr-container">
+                            <img src="data:image/png;base64,${data.qr_base64}" alt="Código QR">
+                            <p style="color: var(--text-muted); font-size: 0.85em; margin-top: 8px;">
+                                Escanea este código con Google Authenticator
+                            </p>
+                            <p style="color: var(--text-muted); font-size: 0.75em; word-break: break-all;">
+                                Clave: ${data.secret}
+                            </p>
+                        </div>
+                    `;
+                    document.getElementById('config2fa').style.display = 'block';
+                    document.getElementById('btnActivar2fa').style.display = 'none';
+                    this.textContent = 'Activando...';
+                    this.disabled = true;
+                } else {
+                    alert('Error: ' + (data.detail || 'No se pudo activar 2FA'));
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        });
+
+        // ========== CONFIRMAR 2FA ==========
+        document.getElementById('btnConfirmar2fa')?.addEventListener('click', async function() {
+            const codigo = document.getElementById('codigo2fa').value.trim();
+            if (!codigo || codigo.length !== 6) {
+                alert('Ingresa un código de 6 dígitos');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/auth/confirm-2fa`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ codigo })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert('✅ 2FA activado correctamente');
+                    document.getElementById('config2fa').style.display = 'none';
+                    document.getElementById('btnActivar2fa').style.display = 'none';
+                    document.getElementById('btnDesactivar2fa').style.display = 'inline-block';
+                    verificarEstado2FA();
+                } else {
+                    alert('Error: ' + (data.detail || 'Código inválido'));
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        });
+
+        // ========== DESACTIVAR 2FA ==========
+        document.getElementById('btnDesactivar2fa')?.addEventListener('click', async function() {
+            if (!confirm('¿Desactivar la verificación en dos pasos?')) return;
+
+            try {
+                const res = await fetch(`${API_URL}/auth/disable-2fa`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (res.ok) {
+                    alert('2FA desactivado');
+                    verificarEstado2FA();
+                } else {
+                    const error = await res.json();
+                    alert('Error: ' + JSON.stringify(error));
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        });
+
+        // ========== INICIAR ==========
+        verificarEstado2FA();
+    </script>
+</body>
+</html>

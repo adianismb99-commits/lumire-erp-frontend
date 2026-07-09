@@ -285,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Login
+        // Login con 2FA
         const loginBtn = document.getElementById('loginBtn');
         const errorMsg = document.getElementById('errorMsg');
         if (loginBtn) {
@@ -314,6 +314,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     const data = await response.json();
                     
                     if (response.ok) {
+                        // Si requiere 2FA
+                        if (data.requires_2fa) {
+                            // Guardar temporal_token y mostrar campo de código
+                            localStorage.setItem('temporal_token', data.temporal_token);
+                            show2FAForm(data.temporal_token);
+                            return;
+                        }
+                        
                         localStorage.setItem('token', data.access_token);
                         if (rememberCheckbox && rememberCheckbox.checked) {
                             localStorage.setItem('recordarUsuario', email);
@@ -327,6 +335,62 @@ document.addEventListener('DOMContentLoaded', function() {
                 } catch (error) {
                     console.error('Error:', error);
                     if (errorMsg) errorMsg.textContent = 'Error de conexión: ' + error.message;
+                }
+            });
+        }
+
+        function show2FAForm(temporal_token) {
+            const loginBox = document.querySelector('.login-box');
+            // Ocultar campos de login
+            document.getElementById('email').style.display = 'none';
+            document.getElementById('password').style.display = 'none';
+            document.getElementById('loginBtn').style.display = 'none';
+            document.querySelector('.checkbox-group').style.display = 'none';
+            
+            // Mostrar campo de 2FA
+            const div = document.createElement('div');
+            div.id = '2fa-section';
+            div.innerHTML = `
+                <div class="input-group">
+                    <label>Código de verificación</label>
+                    <input type="text" id="codigo2fa" placeholder="Ingresa los 6 dígitos" maxlength="6">
+                </div>
+                <button class="btn-primary" id="btnVerificar2fa">
+                    <i class="fas fa-check"></i> Verificar
+                </button>
+                <div id="error2fa" class="error"></div>
+            `;
+            loginBox.appendChild(div);
+            
+            document.getElementById('btnVerificar2fa')?.addEventListener('click', async function() {
+                const codigo = document.getElementById('codigo2fa').value.trim();
+                const errorDiv = document.getElementById('error2fa');
+                
+                if (!codigo || codigo.length !== 6) {
+                    errorDiv.textContent = 'Ingresa los 6 dígitos del código';
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`${API_URL}/auth/verify-2fa`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            temporal_token: temporal_token,
+                            codigo: codigo
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        localStorage.setItem('token', data.access_token);
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        errorDiv.textContent = data.detail || 'Código inválido';
+                    }
+                } catch (error) {
+                    errorDiv.textContent = 'Error de conexión';
                 }
             });
         }
