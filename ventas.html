@@ -6,6 +6,319 @@
     <title>LUMIRE ERP - Punto de Venta</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ============================================
+           ESTILOS DE CAJA REGISTRADORA PROFESIONAL
+           ============================================ */
+        .pos-container {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 20px;
+            height: calc(100vh - 180px);
+            min-height: 500px;
+        }
+
+        /* Panel de productos */
+        .productos-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .productos-panel h3 {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+        .productos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+        .producto-item {
+            background: var(--bg-primary);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 14px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .producto-item:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.2);
+        }
+        .producto-item:active {
+            transform: scale(0.95);
+        }
+        .producto-item .prod-nombre {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .producto-item .prod-precio {
+            font-size: 0.9em;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-top: 4px;
+        }
+
+        /* Panel de caja */
+        .caja-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Carrito */
+        .carrito-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+        }
+        .carrito-header h3 {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .carrito-items {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 12px;
+            min-height: 120px;
+        }
+        .carrito-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9em;
+        }
+        .carrito-item .item-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .carrito-item .item-cantidad {
+            background: var(--bg-primary);
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+        .carrito-item .item-precio {
+            font-weight: 600;
+            color: var(--accent-cyan);
+        }
+        .carrito-item .btn-eliminar {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.9em;
+            padding: 4px 8px;
+            transition: color 0.2s;
+        }
+        .carrito-item .btn-eliminar:hover {
+            color: var(--danger);
+        }
+        .carrito-total {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-top: 2px solid var(--border-color);
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+        .carrito-total .total-label {
+            color: var(--text-secondary);
+        }
+        .carrito-total .total-monto {
+            color: var(--accent-cyan);
+        }
+
+        /* Panel de pago */
+        .pago-panel {
+            border-top: 1px solid var(--border-color);
+            padding-top: 16px;
+            margin-top: auto;
+        }
+        .pago-panel .pago-label {
+            color: var(--text-secondary);
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Teclado numérico */
+        .teclado-numerico {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            margin: 8px 0 12px 0;
+        }
+        .teclado-numerico .btn-billete {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 10px 4px;
+            font-weight: 700;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: center;
+        }
+        .teclado-numerico .btn-billete:hover {
+            background: var(--accent-purple);
+            color: white;
+            border-color: var(--accent-purple);
+            transform: translateY(-1px);
+        }
+        .teclado-numerico .btn-billete:active {
+            transform: scale(0.93);
+        }
+        .teclado-numerico .btn-billete .sub-label {
+            display: block;
+            font-weight: 400;
+            font-size: 0.6em;
+            color: var(--text-muted);
+        }
+        .teclado-numerico .btn-billete:hover .sub-label {
+            color: rgba(255,255,255,0.7);
+        }
+        .teclado-numerico .btn-limpiar {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+        .teclado-numerico .btn-limpiar:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Campo de pago y vuelto */
+        .pago-vuelto {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .pago-vuelto .campo {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            text-align: center;
+        }
+        .pago-vuelto .campo .label {
+            color: var(--text-muted);
+            font-size: 0.7em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .pago-vuelto .campo .valor {
+            font-size: 1.6em;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+        .pago-vuelto .campo .valor.recibido {
+            color: var(--text-primary);
+        }
+        .pago-vuelto .campo .valor.vuelto {
+            color: var(--success);
+        }
+        .pago-vuelto .campo .valor.vuelto.negativo {
+            color: var(--danger);
+        }
+
+        /* Botón cobrar */
+        .btn-cobrar {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--success), #16a34a);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .btn-cobrar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(34, 197, 94, 0.3);
+        }
+        .btn-cobrar:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .pos-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            .productos-grid {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            }
+            .teclado-numerico {
+                grid-template-columns: repeat(5, 1fr);
+            }
+            .pago-vuelto {
+                grid-template-columns: 1fr 1fr;
+            }
+            .caja-panel {
+                max-height: 500px;
+            }
+        }
+        @media (max-width: 480px) {
+            .teclado-numerico {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* Scrollbar */
+        .carrito-items::-webkit-scrollbar {
+            width: 4px;
+        }
+        .carrito-items::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .carrito-items::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        .productos-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+        .productos-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .productos-panel::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -13,12 +326,12 @@
             <div class="logo">LUMIRE <span>ERP</span></div>
             <nav>
                 <a href="dashboard.html"><i class="fas fa-chart-pie"></i> Panel de Control</a>
-                <a href="ventas.html"><i class="fas fa-cash-register"></i> Punto de Venta</a>
+                <a href="ventas.html" class="active"><i class="fas fa-cash-register"></i> Punto de Venta</a>
                 <a href="productos.html"><i class="fas fa-boxes"></i> Productos</a>
                 <a href="recetas.html"><i class="fas fa-utensils"></i> Recetas</a>
                 <a href="inventario.html"><i class="fas fa-warehouse"></i> Inventario</a>
                 <a href="nomina.html"><i class="fas fa-coins"></i> Nómina</a>
-                <a href="cierre_caja.html"><i class="fas fa-cash-register"></i> Caja Registradora</a>
+                <a href="cierre_caja.html"><i class="fas fa-cash-register"></i> Cierre Caja</a>
                 <a href="usuarios.html"><i class="fas fa-users"></i> Usuarios</a>
                 <a href="configuracion.html"><i class="fas fa-cog"></i> Configuración</a>
                 <a href="#" id="logoutBtn" class="logout"><i class="fas fa-sign-out-alt"></i> Salir</a>
@@ -27,158 +340,209 @@
 
         <main class="main-content">
             <div class="top-bar">
-                <h1><i class="fas fa-cash-register" style="color: var(--accent-cyan);"></i> Punto de Venta</h1>
+                <h1 style="font-size: 1.4em;"><i class="fas fa-cash-register" style="color: var(--accent-cyan);"></i> Punto de Venta</h1>
                 <div class="user-info">
+                    <span style="color: var(--text-muted); font-size: 0.85em;" id="cajaInfo">Caja: Cerrada</span>
                     <div class="avatar">A</div>
                 </div>
             </div>
 
-            <div class="ventas-panel">
-                <!-- Productos -->
-                <div class="card" style="padding: 20px;">
-                    <h3 style="font-size: 1em; margin-bottom: 16px; color: var(--text-secondary);">
-                        <i class="fas fa-box" style="color: var(--accent-purple);"></i> Productos
-                    </h3>
+            <!-- ============================================ -->
+            <!-- CONTENEDOR PRINCIPAL POS                      -->
+            <!-- ============================================ -->
+            <div class="pos-container">
+
+                <!-- Panel izquierdo: Productos -->
+                <div class="productos-panel">
+                    <h3><i class="fas fa-box" style="color: var(--accent-purple);"></i> Productos</h3>
                     <div class="productos-grid" id="productosContainer">
                         <!-- Productos cargados dinámicamente -->
                     </div>
                 </div>
 
-                <!-- Carrito -->
-                <div class="carrito">
+                <!-- Panel derecho: Caja Registradora -->
+                <div class="caja-panel">
+                    <!-- Carrito -->
                     <div class="carrito-header">
-                        <h3 style="font-size: 1em; color: var(--text-secondary);">
-                            <i class="fas fa-shopping-cart" style="color: var(--warning);"></i> Carrito
-                        </h3>
+                        <h3><i class="fas fa-shopping-cart" style="color: var(--warning);"></i> Carrito</h3>
                         <span style="color: var(--text-muted); font-size: 0.8em;" id="carritoCount">0 items</span>
                     </div>
                     <div class="carrito-items" id="carritoItems">
-                        <!-- Items del carrito -->
+                        <div style="color: var(--text-muted); text-align: center; padding: 20px 0; font-size: 0.9em;">
+                            <i class="fas fa-cart-plus" style="font-size: 2em; display: block; margin-bottom: 8px; opacity: 0.3;"></i>
+                            Agrega productos para comenzar
+                        </div>
                     </div>
                     <div class="carrito-total">
-                        <span>Total</span>
-                        <span class="cyan" id="carritoTotal">$0</span>
+                        <span class="total-label">Total</span>
+                        <span class="total-monto" id="carritoTotal">$0.00</span>
                     </div>
-                    <button class="btn-primary" id="pagarBtn" style="margin-top: 16px;">
-                        <i class="fas fa-credit-card"></i> Cobrar
-                    </button>
+
+                    <!-- Panel de pago -->
+                    <div class="pago-panel">
+                        <!-- Teclado numérico de billetes -->
+                        <div class="teclado-numerico">
+                            <button class="btn-billete" onclick="agregarMontoPago(1000)">$1000</button>
+                            <button class="btn-billete" onclick="agregarMontoPago(500)">$500</button>
+                            <button class="btn-billete" onclick="agregarMontoPago(200)">$200</button>
+                            <button class="btn-billete" onclick="agregarMontoPago(100)">$100</button>
+                            <button class="btn-billete" onclick="agregarMontoPago(50)">$50</button>
+                            <button class="btn-billete" onclick="agregarMontoPago(20)">$20</button>
+                            <button class="btn-billete" onclick="agregarMontoPago(10)">$10</button>
+                            <button class="btn-billete" onclick="agregarMontoPago(5)">$5</button>
+                            <button class="btn-billete" onclick="agregarMontoPago(1)">$1</button>
+                            <button class="btn-billete btn-limpiar" onclick="limpiarPago()">
+                                <i class="fas fa-eraser"></i>
+                                <span class="sub-label">Limpiar</span>
+                            </button>
+                        </div>
+
+                        <!-- Campo recibido y vuelto -->
+                        <div class="pago-vuelto">
+                            <div class="campo">
+                                <div class="label">Recibido</div>
+                                <div class="valor recibido" id="pagoDisplay">$0.00</div>
+                                <input type="number" id="pagoEfectivo" placeholder="Escribe o usa botones"
+                                       style="width: 100%; padding: 6px; background: transparent; border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary); text-align: center; font-size: 0.9em; margin-top: 4px; display: none;">
+                            </div>
+                            <div class="campo">
+                                <div class="label">Vuelto</div>
+                                <div class="valor vuelto" id="vueltoCliente">$0.00</div>
+                            </div>
+                        </div>
+
+                        <!-- Botón cobrar -->
+                        <button class="btn-cobrar" id="pagarBtn">
+                            <i class="fas fa-credit-card"></i> Cobrar
+                        </button>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- ============================================ -->
+    <!-- SCRIPTS                                       -->
+    <!-- ============================================ -->
     <script src="app.js"></script>
     <script>
         // ============================================
-        // FUNCIÓN PARA REGISTRAR MOVIMIENTO EN CAJA
+        // FUNCIONES DE CAJA REGISTRADORA VIRTUAL
         // ============================================
-        async function registrarMovimientoCaja(ventaId, total, concepto) {
-            try {
-                await fetch('https://lumire-erp-backend.onrender.com/api/caja/movimiento-venta', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: JSON.stringify({
-                        venta_id: ventaId,
-                        total: total,
-                        concepto: concepto || `Venta #${ventaId}`
-                    })
-                });
-                // No mostramos error al usuario, solo se registra en segundo plano
-            } catch (e) {
-                console.log('Caja no registró movimiento:', e);
+
+        // 1. Agregar monto de billete al campo de pago
+        function agregarMontoPago(monto) {
+            const pagoInput = document.getElementById('pagoEfectivo');
+            const pagoDisplay = document.getElementById('pagoDisplay');
+            if (pagoInput) {
+                let valorActual = parseFloat(pagoInput.value) || 0;
+                pagoInput.value = (valorActual + monto).toFixed(2);
+                pagoDisplay.textContent = `$${(valorActual + monto).toFixed(2)}`;
+                calcularVuelto();
+                pagoInput.focus();
+                pagoInput.select();
             }
         }
 
-        // ============================================
-        // MODIFICAR LA FUNCIÓN registrarVenta (desde app.js)
-        // ============================================
-        // El código de registrarVenta está en app.js
-        // Solo necesitas agregar esta línea después de registrar la venta:
-        // 
-        // if (response.ok) {
-        //     const data = await response.json();
-        //     // Registrar en caja
-        //     await registrarMovimientoCaja(data.id, total, `Venta #${data.id}`);
-        //     alert('✅ Venta registrada');
-        //     carrito = [];
-        //     actualizarCarrito();
-        // }
-        //
-        // Como app.js ya tiene esta función, no la duplicamos.
-        // Este script solo agrega la función auxiliar.
-    </script>
-
-    <script>
-    // ============================================
-    // INTERFAZ DE CAJA REGISTRADORA VIRTUAL
-    // ============================================
-    function agregarProductoAlCarrito(nombre, precio) {
-        // Función que se llama al hacer clic en un producto
-        // Agrega el producto al carrito (debes adaptarlo a tu lógica existente)
-        alert(`Producto agregado: ${nombre} - $${precio}`);
-        // Aquí deberías llamar a tu función agregarAlCarrito() de app.js
-        // Por ejemplo: agregarAlCarrito({nombre: nombre, precio_venta: precio, id: 1});
-    }
-
-    function agregarMontoPago(monto) {
-        // Función para los botones de billetes predefinidos
-        let pagoInput = document.getElementById('pagoEfectivo');
-        if (pagoInput) {
-            let valorActual = parseFloat(pagoInput.value) || 0;
-            pagoInput.value = (valorActual + monto).toFixed(2);
-            calcularVuelto();
+        // 2. Limpiar el campo de pago
+        function limpiarPago() {
+            const pagoInput = document.getElementById('pagoEfectivo');
+            const pagoDisplay = document.getElementById('pagoDisplay');
+            if (pagoInput) {
+                pagoInput.value = '';
+                pagoDisplay.textContent = '$0.00';
+            }
+            document.getElementById('vueltoCliente').textContent = '$0.00';
+            document.getElementById('vueltoCliente').className = 'valor vuelto';
+            document.getElementById('pagoEfectivo').focus();
         }
-    }
 
-    function limpiarPago() {
-        document.getElementById('pagoEfectivo').value = '';
-        document.getElementById('vueltoCliente').textContent = '$0.00';
-    }
+        // 3. Calcular el vuelto automáticamente
+        function calcularVuelto() {
+            const pagoInput = document.getElementById('pagoEfectivo');
+            const pagoDisplay = document.getElementById('pagoDisplay');
+            const vueltoSpan = document.getElementById('vueltoCliente');
 
-    function calcularVuelto() {
-        // Calcula el vuelto automáticamente al escribir en el campo de pago
-        let pagoInput = document.getElementById('pagoEfectivo');
-        let vueltoSpan = document.getElementById('vueltoCliente');
-        // Obtén el total del carrito (debes obtenerlo de tu variable global)
-        // Por ahora, usamos un valor de ejemplo
-        let totalCarrito = 120; // Reemplaza esto con la variable de tu carrito
-        let pago = parseFloat(pagoInput.value) || 0;
-        let vuelto = pago - totalCarrito;
-        vueltoSpan.textContent = `$${vuelto >= 0 ? vuelto.toFixed(2) : '0.00'}`;
-        vueltoSpan.style.color = vuelto >= 0 ? 'var(--success)' : 'var(--danger)';
-    }
-</script>
-<!-- Interfaz de Caja Registradora -->
-<div class="caja-registradora" style="border-top: 1px solid var(--border-color); margin-top: 20px; padding-top: 20px;">
-    <h4 style="color: var(--text-secondary); font-size: 1em; margin-bottom: 12px;">
-        <i class="fas fa-money-bill-wave"></i> Pago en Efectivo
-    </h4>
-    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-        <!-- Botones de billetes predefinidos -->
-        <button class="btn-caja-billete" onclick="agregarMontoPago(500)">$500</button>
-        <button class="btn-caja-billete" onclick="agregarMontoPago(200)">$200</button>
-        <button class="btn-caja-billete" onclick="agregarMontoPago(100)">$100</button>
-        <button class="btn-caja-billete" onclick="agregarMontoPago(50)">$50</button>
-        <button class="btn-caja-billete" onclick="agregarMontoPago(20)">$20</button>
-        <button class="btn-caja-billete" onclick="agregarMontoPago(10)">$10</button>
-        <button class="btn-caja-billete" onclick="agregarMontoPago(5)">$5</button>
-        <button class="btn-caja-billete" onclick="agregarMontoPago(1)">$1</button>
-        <button class="btn-caja-billete" style="background: var(--danger); color: white; border: none;" onclick="limpiarPago()">Limpiar</button>
-    </div>
-    <div style="display: flex; gap: 12px; align-items: center;">
-        <div style="flex: 1;">
-            <label style="color: var(--text-secondary); font-size: 0.85em;">Recibido</label>
-            <input type="number" id="pagoEfectivo" class="input-pago" placeholder="$0.00" step="0.01" min="0"
-                   style="width: 100%; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 1.2em;">
-        </div>
-        <div style="flex: 1; text-align: center;">
-            <label style="color: var(--text-secondary); font-size: 0.85em;">Vuelto</label>
-            <div id="vueltoCliente" style="font-size: 1.8em; font-weight: 700; color: var(--success);">$0.00</div>
-        </div>
-    </div>
-</div>
+            // Obtener el total del carrito
+            let totalCarrito = 0;
+            if (typeof carrito !== 'undefined' && carrito.length > 0) {
+                totalCarrito = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+            }
+
+            const pago = parseFloat(pagoInput.value) || 0;
+            const vuelto = pago - totalCarrito;
+
+            // Actualizar display
+            if (pagoInput.value) {
+                pagoDisplay.textContent = `$${pago.toFixed(2)}`;
+            } else {
+                pagoDisplay.textContent = '$0.00';
+            }
+
+            if (vuelto >= 0) {
+                vueltoSpan.textContent = `$${vuelto.toFixed(2)}`;
+                vueltoSpan.className = 'valor vuelto';
+            } else {
+                vueltoSpan.textContent = `$${vuelto.toFixed(2)}`;
+                vueltoSpan.className = 'valor vuelto negativo';
+            }
+        }
+
+        // 4. Sincronizar input con display
+        document.addEventListener('DOMContentLoaded', function() {
+            const pagoInput = document.getElementById('pagoEfectivo');
+            const pagoDisplay = document.getElementById('pagoDisplay');
+            const btnCobrar = document.getElementById('pagarBtn');
+
+            if (pagoInput) {
+                pagoInput.addEventListener('input', function() {
+                    const val = parseFloat(this.value) || 0;
+                    pagoDisplay.textContent = `$${val.toFixed(2)}`;
+                    calcularVuelto();
+                });
+
+                pagoInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        if (btnCobrar) btnCobrar.click();
+                    }
+                });
+            }
+
+            // Actualizar estado de caja
+            if (typeof cargarEstadoCaja === 'function') {
+                cargarEstadoCaja();
+            }
+        });
+
+        // 5. Función para cargar estado de caja (opcional)
+        async function cargarEstadoCaja() {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch('https://lumire-erp-backend.onrender.com/api/caja/estado', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const infoEl = document.getElementById('cajaInfo');
+                if (data.estado === 'abierta') {
+                    infoEl.textContent = 'Caja: Abierta ✅';
+                    infoEl.style.color = 'var(--success)';
+                } else {
+                    infoEl.textContent = 'Caja: Cerrada ❌';
+                    infoEl.style.color = 'var(--danger)';
+                }
+            } catch (e) {
+                console.log('Error cargando estado de caja:', e);
+            }
+        }
+
+        // Sobrescribir actualizarCarrito para actualizar vuelto
+        const originalActualizarCarrito = window.actualizarCarrito;
+        window.actualizarCarrito = function() {
+            if (typeof originalActualizarCarrito === 'function') {
+                originalActualizarCarrito();
+            }
+            setTimeout(calcularVuelto, 50);
+        };
+    </script>
 </body>
 </html>
