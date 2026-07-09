@@ -347,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             email, 
                             password, 
                             empresa_id, 
-                            const recordarDispositivo = document.getElementById('recordarDispositivoLogin')?.checked || false;
+                            recordar_dispositivo: recordarDispositivo 
                         })
                     });
                     
