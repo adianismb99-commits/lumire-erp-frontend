@@ -448,9 +448,9 @@ function show2FAForm(temporal_token) {
                 </button>
             </div>
         </div>
-        <div class="checkbox-group" style="margin: 12px 0;">  <!-- NUEVO -->
+        <div class="checkbox-group" style="margin: 12px 0; display: flex; align-items: center; gap: 10px;">
             <input type="checkbox" id="recordarDispositivo">
-            <label for="recordarDispositivo" style="color: var(--text-secondary); font-size: 0.9em;">
+            <label for="recordarDispositivo" style="color: var(--text-secondary); font-size: 0.9em; cursor: pointer;">
                 <i class="fas fa-laptop"></i> Recordar este dispositivo por 15 días
             </label>
         </div>
@@ -476,25 +476,27 @@ function show2FAForm(temporal_token) {
     loginBox.appendChild(div);
     
     // ============================================
-    // CURSOR AUTOMÁTICO EN EL CAMPO DE CÓDIGO
+    // CURSOR AUTOMÁTICO Y VALIDACIÓN AUTOMÁTICA
     // ============================================
     const codigoInput = document.getElementById('codigo2fa');
     if (codigoInput) {
         // Enfocar automáticamente
         setTimeout(() => {
             codigoInput.focus();
-        }, 100);
+        }, 200);
         
-        // ============================================
-        // VALIDACIÓN AUTOMÁTICA AL ESCRIBIR 6 DÍGITOS
-        // ============================================
+        // Validación automática al escribir 6 dígitos
         codigoInput.addEventListener('input', function(e) {
-            const valor = this.value.replace(/\D/g, ''); // Solo números
+            // Solo permitir números
+            const valor = this.value.replace(/\D/g, '');
             this.value = valor;
             
             if (valor.length === 6) {
-                // Ejecutar verificación automáticamente
-                document.getElementById('btnVerificar2fa').click();
+                // Simular clic en el botón de verificar
+                const btn = document.getElementById('btnVerificar2fa');
+                if (btn) {
+                    btn.click();
+                }
             }
         });
     }
@@ -505,7 +507,7 @@ function show2FAForm(temporal_token) {
     document.getElementById('btnVerificar2fa')?.addEventListener('click', async function() {
         const codigo = document.getElementById('codigo2fa').value.trim();
         const errorDiv = document.getElementById('error2fa');
-        const recordar = document.getElementById('recordarDispositivo')?.checked || false;  // <-- NUEVO
+        const recordar = document.getElementById('recordarDispositivo')?.checked || false;
         
         if (!codigo || codigo.length !== 6) {
             errorDiv.textContent = 'Ingresa los 6 dígitos del código';
@@ -519,7 +521,7 @@ function show2FAForm(temporal_token) {
                 body: JSON.stringify({
                     temporal_token: temporal_token,
                     codigo: codigo,
-                    recordar_dispositivo: recordar  // <-- NUEVO
+                    recordar_dispositivo: recordar
                 })
             });
             
@@ -535,7 +537,6 @@ function show2FAForm(temporal_token) {
                     document.getElementById('errorClave').textContent = '';
                 } else {
                     errorDiv.textContent = data.detail || 'Código inválido';
-                    // Limpiar el campo y enfocar de nuevo
                     document.getElementById('codigo2fa').value = '';
                     document.getElementById('codigo2fa').focus();
                 }
