@@ -346,8 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         body: JSON.stringify({ 
                             email, 
                             password, 
-                            empresa_id, 
-                            recordar_dispositivo: recordarDispositivo 
+                            empresa_id
                         })
                     });
                     
