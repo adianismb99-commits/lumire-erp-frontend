@@ -24,6 +24,7 @@
             background: white;
             border-radius: var(--radius-sm);
             display: inline-block;
+            width: 100%;
         }
         .qr-container img {
             max-width: 200px;
@@ -33,9 +34,16 @@
             gap: 12px;
             margin-top: 16px;
             align-items: center;
+            flex-wrap: wrap;
         }
         .codigo-input input {
             max-width: 200px;
+            padding: 10px 16px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 1em;
         }
         .btn-2fa {
             background: var(--success);
@@ -45,26 +53,63 @@
             padding: 10px 20px;
             cursor: pointer;
             font-weight: 600;
+            transition: all 0.2s;
         }
-        .btn-2fa.activo {
-            background: var(--danger);
-        }
-        .btn-2fa:hover {
-            opacity: 0.8;
-        }
+        .btn-2fa:hover { opacity: 0.8; }
+        .btn-2fa.activo { background: var(--danger); }
+        .btn-2fa.activo:hover { opacity: 0.8; }
         .status-badge {
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.8em;
             font-weight: 600;
         }
-        .status-badge.activo {
-            background: var(--success);
-            color: white;
+        .status-badge.activo { background: var(--success); color: white; }
+        .status-badge.inactivo { background: var(--danger); color: white; }
+        .gestor-2fa {
+            background: var(--bg-primary);
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            margin-top: 16px;
         }
-        .status-badge.inactivo {
-            background: var(--danger);
-            color: white;
+        .gestor-2fa .codigo-generado {
+            font-size: 2.5em;
+            font-weight: 700;
+            text-align: center;
+            color: var(--accent-cyan);
+            letter-spacing: 8px;
+            font-family: 'Courier New', monospace;
+        }
+        .gestor-2fa .tiempo-restante {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9em;
+            margin-top: 8px;
+        }
+        .gestor-2fa .clave-secreta {
+            background: var(--bg-card);
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            margin: 12px 0;
+        }
+        .gestor-2fa .campo-pegar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .gestor-2fa .campo-pegar input {
+            flex: 1;
+            padding: 10px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            min-width: 200px;
         }
     </style>
 </head>
@@ -80,7 +125,7 @@
                 <a href="inventario.html"><i class="fas fa-warehouse"></i> Inventario</a>
                 <a href="nomina.html"><i class="fas fa-coins"></i> Nómina</a>
                 <a href="usuarios.html"><i class="fas fa-users"></i> Usuarios</a>
-                <a href="configuracion.html" class="active"><i class="fas fa-cog"></i> Configuración</a>
+                <a href="configuracion.html"><i class="fas fa-cog"></i> Configuración</a>
                 <a href="#" id="logoutBtn" class="logout"><i class="fas fa-sign-out-alt"></i> Salir</a>
             </nav>
         </aside>
@@ -99,16 +144,42 @@
                 <div id="status2fa">
                     <p style="color: var(--text-secondary);">Cargando estado...</p>
                 </div>
-                <div id="config2fa" style="display: none;">
-                    <div id="qrContainer"></div>
-                    <div class="codigo-input">
-                        <input type="text" id="codigo2fa" placeholder="Código de 6 dígitos" maxlength="6" style="max-width: 200px;">
-                        <button class="btn-2fa" id="btnConfirmar2fa">Confirmar</button>
+
+                <!-- Gestor 2FA (se muestra al activar) -->
+                <div id="gestor2fa" style="display: none;">
+                    <div class="gestor-2fa">
+                        <h4 style="color: var(--text-secondary); margin-bottom: 12px;">
+                            <i class="fas fa-qrcode"></i> Autenticador LUMIRE
+                        </h4>
+                        <div id="qrContainer" class="qr-container"></div>
+                        
+                        <div style="margin: 16px 0;">
+                            <label style="color: var(--text-secondary); font-size: 0.85em;">Clave secreta (copia este código):</label>
+                            <div class="clave-secreta" id="claveSecreta">Cargando...</div>
+                        </div>
+
+                        <div style="margin: 16px 0;">
+                            <label style="color: var(--text-secondary); font-size: 0.85em;">Pega la clave secreta aquí para generar el código:</label>
+                            <div class="campo-pegar">
+                                <input type="text" id="inputClave" placeholder="JBSWY3DPEHPK3PXP...">
+                                <button class="btn-2fa" id="btnGenerarCodigo">Generar Código</button>
+                            </div>
+                        </div>
+
+                        <div id="codigoGeneradoContainer" style="display: none;">
+                            <div class="codigo-generado" id="codigoGenerado">------</div>
+                            <div class="tiempo-restante">
+                                Expira en: <span id="segundosRestantes">30</span>s
+                                <span style="margin-left: 12px; display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--success);" id="indicadorTiempo"></span>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 16px;">
+                            <button class="btn-2fa" id="btnConfirmar2faManual">✅ Confirmar y Activar 2FA</button>
+                        </div>
                     </div>
-                    <p style="color: var(--text-muted); font-size: 0.85em; margin-top: 8px;">
-                        <i class="fas fa-info-circle"></i> Escanea el código QR con Google Authenticator y luego ingresa el código de 6 dígitos.
-                    </p>
                 </div>
+
                 <div style="margin-top: 12px;">
                     <button class="btn-2fa" id="btnActivar2fa">Activar 2FA</button>
                     <button class="btn-2fa activo" id="btnDesactivar2fa" style="display: none;">Desactivar 2FA</button>
@@ -120,6 +191,8 @@
     <script>
         const API_URL = 'https://lumire-erp-backend.onrender.com/api';
         let token = localStorage.getItem('token');
+        let codigoInterval = null;
+        let secretActual = null;
 
         // ========== CERRAR SESIÓN ==========
         document.getElementById('logoutBtn')?.addEventListener('click', () => {
@@ -146,7 +219,7 @@
                     `;
                     document.getElementById('btnActivar2fa').style.display = 'none';
                     document.getElementById('btnDesactivar2fa').style.display = 'inline-block';
-                    document.getElementById('config2fa').style.display = 'none';
+                    document.getElementById('gestor2fa').style.display = 'none';
                 } else {
                     statusDiv.innerHTML = `
                         <p style="color: var(--text-secondary);">
@@ -156,10 +229,95 @@
                     `;
                     document.getElementById('btnActivar2fa').style.display = 'inline-block';
                     document.getElementById('btnDesactivar2fa').style.display = 'none';
-                    document.getElementById('config2fa').style.display = 'none';
+                    document.getElementById('gestor2fa').style.display = 'none';
                 }
             } catch (e) {
                 document.getElementById('status2fa').innerHTML = '<p style="color: var(--danger);">Error al cargar el estado</p>';
+            }
+        }
+
+        // ========== GENERAR TOTP EN JAVASCRIPT (SIN INTERNET) ==========
+        function base32Decode(str) {
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            const bytes = [];
+            let bits = 0;
+            let value = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str[i].toUpperCase();
+                const index = alphabet.indexOf(char);
+                if (index === -1) continue;
+                value = (value << 5) | index;
+                bits += 5;
+                if (bits >= 8) {
+                    bytes.push((value >> (bits - 8)) & 0xFF);
+                    bits -= 8;
+                }
+            }
+            return new Uint8Array(bytes);
+        }
+
+        function generateTOTP(secret) {
+            try {
+                const key = base32Decode(secret);
+                const timeStep = Math.floor(Date.now() / 30000);
+                const timeBuffer = new ArrayBuffer(8);
+                const view = new DataView(timeBuffer);
+                view.setBigUint64(0, BigInt(timeStep), false);
+
+                // Usar CryptoJS para HMAC-SHA1
+                const hmac = CryptoJS.HmacSHA1(
+                    CryptoJS.lib.WordArray.create(new Uint8Array(timeBuffer)),
+                    CryptoJS.lib.WordArray.create(key)
+                );
+                const hmacBytes = new Uint8Array(hmac.words.length * 4);
+                for (let i = 0; i < hmac.words.length; i++) {
+                    const word = hmac.words[i];
+                    hmacBytes[i * 4] = (word >> 24) & 0xFF;
+                    hmacBytes[i * 4 + 1] = (word >> 16) & 0xFF;
+                    hmacBytes[i * 4 + 2] = (word >> 8) & 0xFF;
+                    hmacBytes[i * 4 + 3] = word & 0xFF;
+                }
+
+                const offset = hmacBytes[hmacBytes.length - 1] & 0xF;
+                const binary = ((hmacBytes[offset] & 0x7F) << 24) |
+                               ((hmacBytes[offset + 1] & 0xFF) << 16) |
+                               ((hmacBytes[offset + 2] & 0xFF) << 8) |
+                               (hmacBytes[offset + 3] & 0xFF);
+                const otp = binary % 1000000;
+                return otp.toString().padStart(6, '0');
+            } catch (e) {
+                console.error('Error generando TOTP:', e);
+                return '------';
+            }
+        }
+
+        function generarYMostrarCodigo() {
+            const clave = document.getElementById('inputClave').value.trim().toUpperCase();
+            if (!clave || clave.length < 16) {
+                alert('Pega una clave secreta válida (mínimo 16 caracteres)');
+                return;
+            }
+            secretActual = clave;
+            const codigo = generateTOTP(clave);
+            document.getElementById('codigoGenerado').textContent = codigo;
+            document.getElementById('codigoGeneradoContainer').style.display = 'block';
+            actualizarTiempo();
+            if (codigoInterval) clearInterval(codigoInterval);
+            codigoInterval = setInterval(() => {
+                const nuevoCodigo = generateTOTP(secretActual);
+                document.getElementById('codigoGenerado').textContent = nuevoCodigo;
+                actualizarTiempo();
+            }, 1000);
+        }
+
+        function actualizarTiempo() {
+            const segundos = 30 - (Math.floor(Date.now() / 1000) % 30);
+            document.getElementById('segundosRestantes').textContent = segundos;
+            const indicador = document.getElementById('indicadorTiempo');
+            if (segundos < 5) {
+                indicador.style.background = 'var(--danger)';
+            } else {
+                indicador.style.background = 'var(--success)';
             }
         }
 
@@ -175,36 +333,37 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    // Mostrar QR
+                    secretActual = data.secret;
+                    document.getElementById('claveSecreta').textContent = data.secret;
+                    document.getElementById('inputClave').value = data.secret;
                     const container = document.getElementById('qrContainer');
                     container.innerHTML = `
-                        <div class="qr-container">
-                            <img src="data:image/png;base64,${data.qr_base64}" alt="Código QR">
-                            <p style="color: var(--text-muted); font-size: 0.85em; margin-top: 8px;">
-                                Escanea este código con Google Authenticator
-                            </p>
-                            <p style="color: var(--text-muted); font-size: 0.75em; word-break: break-all;">
-                                Clave: ${data.secret}
-                            </p>
-                        </div>
+                        <p style="color: var(--text-secondary); margin-bottom: 8px;">Código QR (opcional):</p>
+                        <img src="data:image/png;base64,${data.qr_base64}" alt="Código QR" style="max-width: 200px;">
                     `;
-                    document.getElementById('config2fa').style.display = 'block';
+                    document.getElementById('gestor2fa').style.display = 'block';
                     document.getElementById('btnActivar2fa').style.display = 'none';
                     this.textContent = 'Activando...';
                     this.disabled = true;
+                    
+                    // Generar el código automáticamente al cargar
+                    setTimeout(() => generarYMostrarCodigo(), 500);
                 } else {
                     alert('Error: ' + (data.detail || 'No se pudo activar 2FA'));
                 }
             } catch (e) {
-                alert('Error de conexión');
+                alert('Error de conexión: ' + e.message);
             }
         });
 
-        // ========== CONFIRMAR 2FA ==========
-        document.getElementById('btnConfirmar2fa')?.addEventListener('click', async function() {
-            const codigo = document.getElementById('codigo2fa').value.trim();
-            if (!codigo || codigo.length !== 6) {
-                alert('Ingresa un código de 6 dígitos');
+        // ========== GENERAR CÓDIGO MANUAL ==========
+        document.getElementById('btnGenerarCodigo')?.addEventListener('click', generarYMostrarCodigo);
+
+        // ========== CONFIRMAR Y ACTIVAR 2FA ==========
+        document.getElementById('btnConfirmar2faManual')?.addEventListener('click', async function() {
+            const codigo = document.getElementById('codigoGenerado').textContent;
+            if (!codigo || codigo === '------') {
+                alert('Primero genera un código válido');
                 return;
             }
 
@@ -220,15 +379,16 @@
                 const data = await res.json();
                 if (res.ok) {
                     alert('✅ 2FA activado correctamente');
-                    document.getElementById('config2fa').style.display = 'none';
+                    document.getElementById('gestor2fa').style.display = 'none';
                     document.getElementById('btnActivar2fa').style.display = 'none';
                     document.getElementById('btnDesactivar2fa').style.display = 'inline-block';
+                    if (codigoInterval) clearInterval(codigoInterval);
                     verificarEstado2FA();
                 } else {
-                    alert('Error: ' + (data.detail || 'Código inválido'));
+                    alert('❌ Error: ' + (data.detail || 'Código inválido'));
                 }
             } catch (e) {
-                alert('Error de conexión');
+                alert('Error de conexión: ' + e.message);
             }
         });
 
@@ -246,6 +406,7 @@
                 });
                 if (res.ok) {
                     alert('2FA desactivado');
+                    if (codigoInterval) clearInterval(codigoInterval);
                     verificarEstado2FA();
                 } else {
                     const error = await res.json();
@@ -259,5 +420,7 @@
         // ========== INICIAR ==========
         verificarEstado2FA();
     </script>
+    <!-- Cargar CryptoJS para HMAC -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </body>
 </html>
