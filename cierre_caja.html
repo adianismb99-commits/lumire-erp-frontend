@@ -7,10 +7,6 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --caja-abierta: #22c55e;
-            --caja-cerrada: #ef4444;
-        }
         .caja-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
@@ -31,11 +27,11 @@
             font-size: 0.8em;
             font-weight: 600;
         }
-        .estado.abierta { background: var(--caja-abierta); color: white; }
-        .estado.cerrada { background: var(--caja-cerrada); color: white; }
+        .estado.abierta { background: #22c55e; color: white; }
+        .estado.cerrada { background: #ef4444; color: white; }
         .caja-card .totales {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             gap: 12px;
             margin-top: 16px;
         }
@@ -111,11 +107,12 @@
         }
         .modal-content .arqueo-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
             gap: 8px;
             margin-bottom: 12px;
+            align-items: center;
         }
-        .modal-content .arqueo-grid input {
+        .modal-content .arqueo-grid input, .modal-content .arqueo-grid select {
             margin-bottom: 0;
         }
         .modal-buttons {
@@ -176,6 +173,19 @@
         .tabs button:hover { opacity: 0.8; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        .resumen-cierre .linea {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .resumen-cierre .linea.total {
+            font-weight: 700;
+            font-size: 1.1em;
+            border-bottom: none;
+            border-top: 2px solid var(--border-color);
+            padding-top: 8px;
+        }
     </style>
 </head>
 <body>
@@ -203,13 +213,10 @@
                     <button class="btn-caja btn-abrir" id="btnAbrirCaja">
                         <i class="fas fa-unlock"></i> Abrir Caja
                     </button>
-                    <button class="btn-caja btn-excel" id="btnExportarExcel" style="display:none;">
-                        <i class="fas fa-file-excel"></i> Excel
-                    </button>
                 </div>
             </div>
 
-            <!-- Caja Actual -->
+            <!-- Estado actual de la caja -->
             <div id="cajaActual" class="caja-card">
                 <div class="header">
                     <div>
@@ -223,6 +230,9 @@
                         </button>
                         <button class="btn-caja btn-imprimir" id="btnImprimir" style="display:none;">
                             <i class="fas fa-print"></i> Imprimir
+                        </button>
+                        <button class="btn-caja btn-excel" id="btnExportarExcel" style="display:none;">
+                            <i class="fas fa-file-excel"></i> Excel
                         </button>
                         <button class="btn-caja btn-cerrar" id="btnCerrarCaja" style="display:none;">
                             <i class="fas fa-lock"></i> Cerrar Caja
@@ -240,7 +250,7 @@
                     </div>
                     <div class="item">
                         <div class="etiqueta">Gastos</div>
-                        <div class="valor negativo" id="gastosHoy">-$0.00</div>
+                        <div class="valor negativo" id="gastosHoy">$0.00</div>
                     </div>
                     <div class="item">
                         <div class="etiqueta">Ingresos Extras</div>
@@ -337,8 +347,8 @@
     <div id="modalAbrir" class="modal">
         <div class="modal-content">
             <h3><i class="fas fa-unlock"></i> Abrir Caja</h3>
-            <input type="text" id="nombreCajaInput" placeholder="Nombre de la caja (ej: Caja Principal)" value="Caja Principal">
-            <input type="number" id="saldoInicialInput" placeholder="Saldo inicial" step="0.01">
+            <input type="text" id="nombreCajaInput" placeholder="Nombre de la caja" value="Caja Principal">
+            <input type="number" id="saldoInicialInput" placeholder="Saldo inicial (dinero que tienes)" step="0.01">
             <textarea id="observacionesAbrir" placeholder="Observaciones (opcional)" rows="2"></textarea>
             <div class="modal-buttons">
                 <button class="btn-guardar-modal" id="btnConfirmarAbrir">Abrir Caja</button>
@@ -351,15 +361,15 @@
     <div id="modalCerrar" class="modal">
         <div class="modal-content">
             <h3><i class="fas fa-lock"></i> Cerrar Caja</h3>
-            <div id="resumenCierre" class="resumen-cierre">
+            <div id="resumenCierre">
                 <div class="linea"><span>Saldo Inicial</span><span id="rSaldoInicial">$0.00</span></div>
                 <div class="linea"><span>Ventas</span><span id="rVentas">$0.00</span></div>
-                <div class="linea"><span>Gastos</span><span id="rGastos">-$0.00</span></div>
+                <div class="linea"><span>Gastos</span><span id="rGastos">$0.00</span></div>
                 <div class="linea"><span>Ingresos Extras</span><span id="rIngresos">$0.00</span></div>
                 <div class="linea total"><span>Saldo Esperado</span><span id="rSaldoEsperado">$0.00</span></div>
                 <div style="margin-top:12px;">
                     <label style="color: var(--text-secondary);">Saldo Real (dinero contado)</label>
-                    <input type="number" id="saldoRealInput" placeholder="Ingresa el saldo real" step="0.01" style="width:100%; padding:10px; margin-top:4px; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text-primary);">
+                    <input type="number" id="saldoRealInput" placeholder="Cuenta el dinero y ponlo aquí" step="0.01" style="width:100%; padding:10px; margin-top:4px; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text-primary);">
                 </div>
                 <div class="linea total" style="border-top:2px solid var(--border-color); margin-top:8px; padding-top:8px;">
                     <span>Diferencia</span>
@@ -416,13 +426,51 @@
                 Registra cuántos billetes y monedas hay en la caja.
             </p>
             <div id="arqueoForm">
-                <div class="arqueo-grid" id="arqueoGrid">
-                    <input type="number" id="denom1" placeholder="Denominación" step="0.01" value="1000">
-                    <input type="number" id="cant1" placeholder="Cantidad" min="0">
-                    <select id="tipo1">
-                        <option value="billete">Billete</option>
-                        <option value="moneda">Moneda</option>
-                    </select>
+                <div id="arqueoGrid">
+                    <div class="arqueo-grid">
+                        <input type="number" placeholder="Denominación" step="0.01" value="1000">
+                        <input type="number" placeholder="Cantidad" min="0">
+                        <select>
+                            <option value="billete">Billete</option>
+                            <option value="moneda">Moneda</option>
+                        </select>
+                        <button class="btn-caja" onclick="this.parentElement.remove()" style="background:var(--danger);color:white;padding:4px 8px;width:100%;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="arqueo-grid">
+                        <input type="number" placeholder="Denominación" step="0.01" value="500">
+                        <input type="number" placeholder="Cantidad" min="0">
+                        <select>
+                            <option value="billete">Billete</option>
+                            <option value="moneda">Moneda</option>
+                        </select>
+                        <button class="btn-caja" onclick="this.parentElement.remove()" style="background:var(--danger);color:white;padding:4px 8px;width:100%;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="arqueo-grid">
+                        <input type="number" placeholder="Denominación" step="0.01" value="200">
+                        <input type="number" placeholder="Cantidad" min="0">
+                        <select>
+                            <option value="billete">Billete</option>
+                            <option value="moneda">Moneda</option>
+                        </select>
+                        <button class="btn-caja" onclick="this.parentElement.remove()" style="background:var(--danger);color:white;padding:4px 8px;width:100%;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="arqueo-grid">
+                        <input type="number" placeholder="Denominación" step="0.01" value="100">
+                        <input type="number" placeholder="Cantidad" min="0">
+                        <select>
+                            <option value="billete">Billete</option>
+                            <option value="moneda">Moneda</option>
+                        </select>
+                        <button class="btn-caja" onclick="this.parentElement.remove()" style="background:var(--danger);color:white;padding:4px 8px;width:100%;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
                 </div>
                 <button class="btn-caja" id="btnAgregarFilaArqueo" style="background: var(--accent-cyan); color: var(--bg-primary); width:100%; margin-bottom:12px;">
                     <i class="fas fa-plus"></i> Agregar fila
@@ -439,7 +487,6 @@
         const API_URL = 'https://lumire-erp-backend.onrender.com/api';
         let token = localStorage.getItem('token');
         let sesionActual = null;
-        let arqueoData = [];
 
         // ========== FUNCIONES DE UTILIDAD ==========
         function formatCurrency(amount) {
@@ -487,8 +534,8 @@
                 const btnIngreso = document.getElementById('btnAgregarIngreso');
                 const btnArqueo = document.getElementById('btnArqueo');
                 const btnImprimir = document.getElementById('btnImprimir');
-                const btnActualizar = document.getElementById('btnActualizar');
                 const btnExcel = document.getElementById('btnExportarExcel');
+                const btnActualizar = document.getElementById('btnActualizar');
                 const infoSesion = document.getElementById('infoSesion');
                 const nombreCaja = document.getElementById('nombreCaja');
                 
@@ -501,8 +548,8 @@
                     btnIngreso.style.display = 'inline-block';
                     btnArqueo.style.display = 'inline-block';
                     btnImprimir.style.display = 'inline-block';
-                    btnActualizar.style.display = 'inline-block';
                     btnExcel.style.display = 'inline-block';
+                    btnActualizar.style.display = 'inline-block';
                     sesionActual = data.sesion;
                     
                     const fecha = new Date(data.sesion.fecha_apertura);
@@ -511,7 +558,7 @@
                     
                     document.getElementById('saldoInicial').textContent = formatCurrency(data.sesion.saldo_inicial);
                     document.getElementById('ventasHoy').textContent = formatCurrency(data.ventas_hoy);
-                    document.getElementById('gastosHoy').textContent = formatCurrency(-data.gastos_hoy);
+                    document.getElementById('gastosHoy').textContent = formatCurrency(data.gastos_hoy);
                     document.getElementById('ingresosExtra').textContent = formatCurrency(data.ingresos_extra || 0);
                     document.getElementById('saldoEsperado').textContent = formatCurrency(data.saldo_esperado);
                     document.getElementById('saldoReal').textContent = formatCurrency(data.saldo_real || 0);
@@ -531,6 +578,7 @@
                                 'ingreso_extra': '💵 Ingreso Extra',
                                 'ajuste': '🔧 Ajuste'
                             }[m.tipo] || m.tipo;
+                            const monto = parseFloat(m.monto);
                             html += `
                                 <div class="movimiento-item">
                                     <div>
@@ -540,7 +588,7 @@
                                         <span style="color:var(--text-muted);font-size:0.8em;">${new Date(m.fecha).toLocaleTimeString('es-CU')}</span>
                                     </div>
                                     <span style="font-weight:600; ${m.tipo === 'gasto' ? 'color:var(--danger)' : 'color:var(--success)'}">
-                                        ${m.tipo === 'gasto' ? '-' : '+'}$${Math.abs(m.monto)}
+                                        ${m.tipo === 'gasto' ? '-' : '+'}$${Math.abs(monto).toFixed(2)}
                                     </span>
                                 </div>
                             `;
@@ -603,15 +651,15 @@
                     btnIngreso.style.display = 'none';
                     btnArqueo.style.display = 'none';
                     btnImprimir.style.display = 'none';
-                    btnActualizar.style.display = 'none';
                     btnExcel.style.display = 'none';
+                    btnActualizar.style.display = 'none';
                     sesionActual = null;
                     infoSesion.textContent = '';
                     nombreCaja.textContent = 'Caja Principal';
                     
                     document.getElementById('saldoInicial').textContent = '$0.00';
                     document.getElementById('ventasHoy').textContent = '$0.00';
-                    document.getElementById('gastosHoy').textContent = '-$0.00';
+                    document.getElementById('gastosHoy').textContent = '$0.00';
                     document.getElementById('ingresosExtra').textContent = '$0.00';
                     document.getElementById('saldoEsperado').textContent = '$0.00';
                     document.getElementById('saldoReal').textContent = '$0.00';
@@ -689,6 +737,11 @@
             const saldo = parseFloat(document.getElementById('saldoInicialInput').value) || 0;
             const obs = document.getElementById('observacionesAbrir').value;
             
+            if (saldo < 0) {
+                alert('El saldo inicial no puede ser negativo');
+                return;
+            }
+            
             try {
                 const res = await fetch(`${API_URL}/caja/abrir`, {
                     method: 'POST',
@@ -725,7 +778,7 @@
                 
                 document.getElementById('rSaldoInicial').textContent = formatCurrency(data.saldo_inicial);
                 document.getElementById('rVentas').textContent = formatCurrency(data.ventas);
-                document.getElementById('rGastos').textContent = formatCurrency(-data.gastos);
+                document.getElementById('rGastos').textContent = formatCurrency(data.gastos);
                 document.getElementById('rIngresos').textContent = formatCurrency(data.ingresos_extra || 0);
                 document.getElementById('rSaldoEsperado').textContent = formatCurrency(data.saldo_esperado);
                 document.getElementById('saldoRealInput').value = '';
@@ -809,6 +862,11 @@
                 return;
             }
             
+            if (monto <= 0) {
+                alert('El monto debe ser mayor a 0');
+                return;
+            }
+            
             try {
                 const res = await fetch(`${API_URL}/caja/gasto`, {
                     method: 'POST',
@@ -859,6 +917,11 @@
                 return;
             }
             
+            if (monto <= 0) {
+                alert('El monto debe ser mayor a 0');
+                return;
+            }
+            
             try {
                 const res = await fetch(`${API_URL}/caja/ingreso-extra`, {
                     method: 'POST',
@@ -888,33 +951,25 @@
         // ========== ARQUEO ==========
         document.getElementById('btnAgregarArqueo')?.addEventListener('click', () => {
             document.getElementById('modalArqueo').classList.add('active');
-            arqueoData = [];
-            // Limpiar y agregar una fila por defecto
-            const grid = document.getElementById('arqueoGrid');
-            grid.innerHTML = '';
-            agregarFilaArqueo();
         });
 
-        function agregarFilaArqueo() {
+        document.getElementById('btnAgregarFilaArqueo')?.addEventListener('click', () => {
             const grid = document.getElementById('arqueoGrid');
-            const row = document.createElement('div');
-            row.className = 'arqueo-grid';
-            const idx = grid.children.length + 1;
-            row.innerHTML = `
-                <input type="number" placeholder="Denominación" step="0.01" value="${idx === 1 ? 1000 : idx === 2 ? 500 : idx === 3 ? 200 : 100}">
+            const div = document.createElement('div');
+            div.className = 'arqueo-grid';
+            div.innerHTML = `
+                <input type="number" placeholder="Denominación" step="0.01">
                 <input type="number" placeholder="Cantidad" min="0">
                 <select>
                     <option value="billete">Billete</option>
                     <option value="moneda">Moneda</option>
                 </select>
-                <button class="btn-caja" onclick="this.parentElement.remove()" style="background:var(--danger);color:white;padding:4px 8px;grid-column:span 3;width:100%;">
-                    <i class="fas fa-times"></i> Eliminar
+                <button class="btn-caja" onclick="this.parentElement.remove()" style="background:var(--danger);color:white;padding:4px 8px;width:100%;">
+                    <i class="fas fa-times"></i>
                 </button>
             `;
-            grid.appendChild(row);
-        }
-
-        document.getElementById('btnAgregarFilaArqueo')?.addEventListener('click', agregarFilaArqueo);
+            grid.appendChild(div);
+        });
 
         document.getElementById('btnCancelarArqueo')?.addEventListener('click', () => {
             document.getElementById('modalArqueo').classList.remove('active');
@@ -980,13 +1035,11 @@
                     return;
                 }
                 
-                // Crear CSV
                 let csv = 'Fecha,Concepto,Tipo,Monto,Categoría,Comprobante\n';
                 data.movimientos.forEach(m => {
                     csv += `${new Date(m.fecha).toLocaleDateString('es-CU')},${m.concepto},${m.tipo},${m.monto},${m.categoria||''},${m.comprobante||''}\n`;
                 });
                 
-                // Descargar
                 const blob = new Blob([csv], { type: 'text/csv' });
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -999,7 +1052,7 @@
             }
         });
 
-        // ========== CERRAR MODALES AL HACER CLIC FUERA ==========
+        // ========== CERRAR MODALES ==========
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) modal.classList.remove('active');
@@ -1008,6 +1061,14 @@
 
         // ========== INICIAR ==========
         cargarCaja();
+
+        // Recargar cada 30 segundos si la caja está abierta
+        setInterval(() => {
+            const estado = document.getElementById('estadoCaja');
+            if (estado && estado.textContent === 'ABIERTA') {
+                cargarCaja();
+            }
+        }, 30000);
     </script>
 </body>
 </html>
