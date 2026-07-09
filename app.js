@@ -327,10 +327,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 const pwdInput = document.getElementById('password');
                 const empresaSelect = document.getElementById('empresaSelect');
                 const rememberCheckbox = document.getElementById('rememberCheckbox');
+                const recordarDispositivoCheck = document.getElementById('recordarDispositivoLogin');
                 
                 const email = emailInput ? emailInput.value.trim() : '';
                 const password = pwdInput ? pwdInput.value.trim() : '';
                 const empresa_id = empresaSelect ? parseInt(empresaSelect.value) : 1;
+                const recordar_dispositivo = recordarDispositivoCheck ? recordarDispositivoCheck.checked : false;
                 
                 if (!email || !password) {
                     if (errorMsg) errorMsg.textContent = 'Completa email y contraseña';
@@ -344,14 +346,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         body: JSON.stringify({ 
                             email, 
                             password, 
-                            empresa_id
+                            empresa_id,
+                            recordar_dispositivo: recordar_dispositivo
                         })
                     });
                     
                     const data = await response.json();
                     
                     if (response.ok) {
-                        // Si requiere 2FA
                         if (data.requires_2fa) {
                             localStorage.setItem('temporal_token', data.temporal_token);
                             show2FAForm(data.temporal_token);
