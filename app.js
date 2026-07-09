@@ -346,8 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         body: JSON.stringify({ 
                             email, 
                             password, 
-                            empresa_id,
-                            recordar_dispositivo: recordar_dispositivo
+                            empresa_id
                         })
                     });
                     
@@ -454,12 +453,6 @@ function show2FAForm(temporal_token) {
                 </button>
             </div>
         </div>
-        <div class="checkbox-group" style="margin: 12px 0; display: flex; align-items: center; gap: 10px;">
-            <input type="checkbox" id="recordarDispositivo">
-            <label for="recordarDispositivo" style="color: var(--text-secondary); font-size: 0.9em; cursor: pointer;">
-                <i class="fas fa-laptop"></i> Recordar este dispositivo por 15 días
-            </label>
-        </div>
         <button class="btn-primary" id="btnVerificar2fa" style="margin-top: 8px;">
             <i class="fas fa-check"></i> Verificar
         </button>
@@ -497,7 +490,7 @@ function show2FAForm(temporal_token) {
     document.getElementById('btnVerificar2fa')?.addEventListener('click', async function() {
         const codigo = document.getElementById('codigo2fa').value.trim();
         const errorDiv = document.getElementById('error2fa');
-        const recordar = document.getElementById('recordarDispositivo')?.checked || false;
+        const recordar = true;
         
         console.log('🔍 Botón Verificar clickeado');
         console.log('🔍 recordar_dispositivo:', recordar);
@@ -514,7 +507,7 @@ function show2FAForm(temporal_token) {
                 body: JSON.stringify({
                     temporal_token: temporal_token,
                     codigo: codigo,
-                    recordar_dispositivo: recordar
+                    recordar_dispositivo: true;
                 })
             });
             
