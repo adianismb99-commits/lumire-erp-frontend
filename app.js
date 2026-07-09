@@ -491,21 +491,20 @@ function show2FAForm(temporal_token) {
             codigoInput.focus();
         }, 200);
         
-        // Validación automática al escribir 6 dígitos
-        codigoInput.addEventListener('input', function(e) {
-            // Solo permitir números
-            const valor = this.value.replace(/\D/g, '');
-            this.value = valor;
-            
-            if (valor.length === 6) {
-                // Simular clic en el botón de verificar
-                const btn = document.getElementById('btnVerificar2fa');
-                if (btn) {
-                    btn.click();
-                }
-            }
-        });
-    }
+        // ============================================
+        // VALIDACIÓN AUTOMÁTICA - COMENTADA PARA PRUEBAS
+        // ============================================
+        // codigoInput.addEventListener('input', function(e) {
+        //     const valor = this.value.replace(/\D/g, '');
+        //     this.value = valor;
+        //     if (valor.length === 6) {
+        //         const btn = document.getElementById('btnVerificar2fa');
+        //         if (btn) {
+        //             btn.click();
+        //         }
+        //     }
+        // });
+}
     
     // ============================================
     // EVENTO: VERIFICAR 2FA
