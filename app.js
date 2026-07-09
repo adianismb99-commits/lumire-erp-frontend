@@ -512,7 +512,6 @@ function show2FAForm(temporal_token) {
     document.getElementById('btnVerificar2fa')?.addEventListener('click', async function() {
         const codigo = document.getElementById('codigo2fa').value.trim();
         const errorDiv = document.getElementById('error2fa');
-        const recordar = document.getElementById('recordarDispositivo')?.checked || false;
         
         if (!codigo || codigo.length !== 6) {
             errorDiv.textContent = 'Ingresa los 6 dígitos del código';
@@ -526,7 +525,7 @@ function show2FAForm(temporal_token) {
                 body: JSON.stringify({
                     temporal_token: temporal_token,
                     codigo: codigo,
-                    recordar_dispositivo: recordar
+                    recordar_dispositivo: recordar  // ❌ recordar no está definido
                 })
             });
             
