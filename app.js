@@ -1,4 +1,26 @@
 // ============================================
+// FUNCIÓN PARA CONVERTIR FECHAS A HORA DE CUBA
+// ============================================
+
+function fechaCuba(fechaISO) {
+    if (!fechaISO) return 'Nunca';
+    try {
+        const fecha = new Date(fechaISO + 'Z'); // Forzar como UTC
+        return fecha.toLocaleString('es-CU', { 
+            timeZone: 'America/Havana',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    } catch (e) {
+        return fechaISO;
+    }
+}
+
+// ============================================
 // LUMIRE ERP - app.js (versión definitiva)
 // ============================================
 

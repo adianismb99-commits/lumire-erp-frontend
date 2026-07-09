@@ -244,12 +244,12 @@
                 const btnCambiar = document.getElementById('btnCambiar2faPersonal');
                 const cambiarSection = document.getElementById('cambiar2faSection');
 
-                if (user['2fa_habilitado']) {
+                if (user['2fa_habilitado'] === true) {
                     statusDiv.innerHTML = `
                         <p style="color: var(--text-secondary);">
                             Estado: <span class="status-badge activo">ACTIVO</span>
                             <span style="margin-left: 16px; font-size: 0.9em;">
-                                Última verificación: ${user.ultima_verificacion_2fa ? new Date(user.ultima_verificacion_2fa).toLocaleString() : 'Nunca'}
+                                Última verificación: ${fechaCuba(user.ultima_verificacion_2fa)}
                             </span>
                         </p>
                     `;
