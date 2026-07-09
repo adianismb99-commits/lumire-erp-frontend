@@ -474,3 +474,29 @@ body {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+/* ============================================
+   ESTILOS DE CAJA REGISTRADORA
+   ============================================ */
+.btn-caja-billete {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 8px 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9em;
+    flex: 1 0 auto;
+}
+.btn-caja-billete:hover {
+    background: var(--accent-purple);
+    color: white;
+    border-color: var(--accent-purple);
+    transform: scale(1.02);
+}
+.input-pago:focus {
+    outline: none;
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}

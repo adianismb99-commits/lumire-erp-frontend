@@ -193,6 +193,13 @@ function agregarAlCarrito(producto) {
         });
     }
     actualizarCarrito();
+    
+    // ============================================
+    // ACTUALIZAR VUELTO AUTOMÁTICAMENTE
+    // ============================================
+    if (typeof calcularVuelto === 'function') {
+        calcularVuelto();
+    }
 }
 
 function actualizarCarrito() {
@@ -228,13 +235,37 @@ async function registrarVenta() {
         return;
     }
     
+    // ============================================
+    // VALIDAR QUE EL PAGO SEA SUFICIENTE
+    // ============================================
+    const totalCarrito = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+    const pagoInput = document.getElementById('pagoEfectivo');
+    let pago = 0;
+    if (pagoInput) {
+        pago = parseFloat(pagoInput.value) || 0;
+    }
+    
+    if (pago < totalCarrito) {
+        alert(`❌ El pago ($${pago.toFixed(2)}) es insuficiente. Total: $${totalCarrito.toFixed(2)}`);
+        if (pagoInput) pagoInput.focus();
+        return;
+    }
+    
+    const vuelto = pago - totalCarrito;
+    
+    // Confirmar el cobro con el vuelto
+    if (!confirm(`Total: $${totalCarrito.toFixed(2)}\nRecibido: $${pago.toFixed(2)}\nVuelto: $${vuelto.toFixed(2)}\n\n¿Confirmar venta?`)) {
+        return;
+    }
+    
+    // ============================================
+    // REGISTRAR LA VENTA
+    // ============================================
     const detalles = carrito.map(item => ({
         producto_id: item.id,
         cantidad: item.cantidad,
         precio_unitario: item.precio
     }));
-    
-    const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
     
     try {
         const response = await fetch(`${API_URL}/ventas/`, {
@@ -266,7 +297,7 @@ async function registrarVenta() {
                     },
                     body: JSON.stringify({
                         venta_id: data.id,
-                        total: total,
+                        total: totalCarrito,
                         concepto: `Venta #${data.id}`
                     })
                 });
@@ -274,9 +305,24 @@ async function registrarVenta() {
                 console.log('Error al registrar en caja:', cajaError);
             }
             
-            alert('✅ Venta registrada');
+            // ============================================
+            // LIMPIAR TODO
+            // ============================================
+            alert(`✅ Venta registrada\nTotal: $${totalCarrito.toFixed(2)}\nVuelto: $${vuelto.toFixed(2)}`);
             carrito = [];
             actualizarCarrito();
+            
+            // Limpiar campo de pago
+            if (pagoInput) {
+                pagoInput.value = '';
+                document.getElementById('vueltoCliente').textContent = '$0.00';
+            }
+            
+            // Actualizar dashboard si está visible
+            if (typeof loadDashboard === 'function') {
+                loadDashboard();
+            }
+            
         } else {
             const error = await response.json();
             alert('Error: ' + JSON.stringify(error));

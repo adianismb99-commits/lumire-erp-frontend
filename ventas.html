@@ -110,5 +110,75 @@
         // Como app.js ya tiene esta función, no la duplicamos.
         // Este script solo agrega la función auxiliar.
     </script>
+
+    <script>
+    // ============================================
+    // INTERFAZ DE CAJA REGISTRADORA VIRTUAL
+    // ============================================
+    function agregarProductoAlCarrito(nombre, precio) {
+        // Función que se llama al hacer clic en un producto
+        // Agrega el producto al carrito (debes adaptarlo a tu lógica existente)
+        alert(`Producto agregado: ${nombre} - $${precio}`);
+        // Aquí deberías llamar a tu función agregarAlCarrito() de app.js
+        // Por ejemplo: agregarAlCarrito({nombre: nombre, precio_venta: precio, id: 1});
+    }
+
+    function agregarMontoPago(monto) {
+        // Función para los botones de billetes predefinidos
+        let pagoInput = document.getElementById('pagoEfectivo');
+        if (pagoInput) {
+            let valorActual = parseFloat(pagoInput.value) || 0;
+            pagoInput.value = (valorActual + monto).toFixed(2);
+            calcularVuelto();
+        }
+    }
+
+    function limpiarPago() {
+        document.getElementById('pagoEfectivo').value = '';
+        document.getElementById('vueltoCliente').textContent = '$0.00';
+    }
+
+    function calcularVuelto() {
+        // Calcula el vuelto automáticamente al escribir en el campo de pago
+        let pagoInput = document.getElementById('pagoEfectivo');
+        let vueltoSpan = document.getElementById('vueltoCliente');
+        // Obtén el total del carrito (debes obtenerlo de tu variable global)
+        // Por ahora, usamos un valor de ejemplo
+        let totalCarrito = 120; // Reemplaza esto con la variable de tu carrito
+        let pago = parseFloat(pagoInput.value) || 0;
+        let vuelto = pago - totalCarrito;
+        vueltoSpan.textContent = `$${vuelto >= 0 ? vuelto.toFixed(2) : '0.00'}`;
+        vueltoSpan.style.color = vuelto >= 0 ? 'var(--success)' : 'var(--danger)';
+    }
+</script>
+<!-- Interfaz de Caja Registradora -->
+<div class="caja-registradora" style="border-top: 1px solid var(--border-color); margin-top: 20px; padding-top: 20px;">
+    <h4 style="color: var(--text-secondary); font-size: 1em; margin-bottom: 12px;">
+        <i class="fas fa-money-bill-wave"></i> Pago en Efectivo
+    </h4>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+        <!-- Botones de billetes predefinidos -->
+        <button class="btn-caja-billete" onclick="agregarMontoPago(500)">$500</button>
+        <button class="btn-caja-billete" onclick="agregarMontoPago(200)">$200</button>
+        <button class="btn-caja-billete" onclick="agregarMontoPago(100)">$100</button>
+        <button class="btn-caja-billete" onclick="agregarMontoPago(50)">$50</button>
+        <button class="btn-caja-billete" onclick="agregarMontoPago(20)">$20</button>
+        <button class="btn-caja-billete" onclick="agregarMontoPago(10)">$10</button>
+        <button class="btn-caja-billete" onclick="agregarMontoPago(5)">$5</button>
+        <button class="btn-caja-billete" onclick="agregarMontoPago(1)">$1</button>
+        <button class="btn-caja-billete" style="background: var(--danger); color: white; border: none;" onclick="limpiarPago()">Limpiar</button>
+    </div>
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <div style="flex: 1;">
+            <label style="color: var(--text-secondary); font-size: 0.85em;">Recibido</label>
+            <input type="number" id="pagoEfectivo" class="input-pago" placeholder="$0.00" step="0.01" min="0"
+                   style="width: 100%; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 1.2em;">
+        </div>
+        <div style="flex: 1; text-align: center;">
+            <label style="color: var(--text-secondary); font-size: 0.85em;">Vuelto</label>
+            <div id="vueltoCliente" style="font-size: 1.8em; font-weight: 700; color: var(--success);">$0.00</div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
