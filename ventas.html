@@ -2,145 +2,204 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>LUMIRE ERP - Punto de Venta</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* ============================================
-           ESTILOS DE CAJA REGISTRADORA PROFESIONAL
+           ESTILOS DE CAJA REGISTRADORA - MÓVIL
            ============================================ */
-        .pos-container {
-            display: grid;
-            grid-template-columns: 1fr 420px;
-            gap: 20px;
-            height: calc(100vh - 180px);
-            min-height: 500px;
+        * {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
-        /* Panel de productos */
+        .pos-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            height: calc(100vh - 130px);
+            min-height: 500px;
+            overflow: hidden;
+        }
+
+        /* Panel de productos - más compacto en móvil */
         .productos-panel {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
-            padding: 20px;
+            padding: 12px;
             overflow-y: auto;
+            max-height: 180px;
+            flex-shrink: 0;
         }
         .productos-panel h3 {
             color: var(--text-secondary);
-            font-size: 0.9em;
+            font-size: 0.7em;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 16px;
+            margin-bottom: 8px;
         }
         .productos-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+            gap: 6px;
         }
         .producto-item {
             background: var(--bg-primary);
             border: 2px solid var(--border-color);
             border-radius: var(--radius-sm);
-            padding: 14px 8px;
+            padding: 8px 4px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s;
-        }
-        .producto-item:hover {
-            border-color: var(--accent-purple);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.2);
+            transition: all 0.15s;
+            -webkit-touch-callout: none;
+            user-select: none;
+            min-height: 52px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
         .producto-item:active {
-            transform: scale(0.95);
+            transform: scale(0.92);
+            border-color: var(--accent-purple);
+            background: rgba(139, 92, 246, 0.1);
         }
         .producto-item .prod-nombre {
-            font-size: 0.8em;
+            font-size: 0.65em;
             font-weight: 600;
             color: var(--text-primary);
+            word-break: break-word;
+            line-height: 1.2;
         }
         .producto-item .prod-precio {
-            font-size: 0.9em;
+            font-size: 0.7em;
             font-weight: 700;
             color: var(--accent-cyan);
-            margin-top: 4px;
+            margin-top: 2px;
         }
 
-        /* Panel de caja */
+        /* Panel de caja - ocupa el resto */
         .caja-panel {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
-            padding: 20px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
         }
 
-        /* Carrito */
+        /* Carrito - con scroll automático */
+        .carrito-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+            scroll-behavior: smooth;
+        }
+        .carrito-wrapper::-webkit-scrollbar {
+            width: 3px;
+        }
+        .carrito-wrapper::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
         .carrito-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 12px;
-            margin-bottom: 12px;
+            padding-bottom: 6px;
+            margin-bottom: 6px;
+            position: sticky;
+            top: 0;
+            background: var(--bg-card);
+            z-index: 5;
         }
         .carrito-header h3 {
             color: var(--text-secondary);
-            font-size: 0.9em;
+            font-size: 0.7em;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
         .carrito-items {
-            flex: 1;
+            min-height: 40px;
+            max-height: 100px;
             overflow-y: auto;
-            margin-bottom: 12px;
-            min-height: 120px;
+        }
+        .carrito-items::-webkit-scrollbar {
+            width: 2px;
+        }
+        .carrito-items::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
         }
         .carrito-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 0;
+            padding: 4px 0;
             border-bottom: 1px solid var(--border-color);
-            font-size: 0.9em;
+            font-size: 0.75em;
         }
         .carrito-item .item-info {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            flex: 1;
+            min-width: 0;
         }
         .carrito-item .item-cantidad {
             background: var(--bg-primary);
-            padding: 2px 10px;
-            border-radius: 12px;
+            padding: 0 8px;
+            border-radius: 10px;
             font-weight: 600;
-            font-size: 0.85em;
+            font-size: 0.75em;
+            min-width: 20px;
+            text-align: center;
+        }
+        .carrito-item .item-nombre {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .carrito-item .item-precio {
             font-weight: 600;
             color: var(--accent-cyan);
+            font-size: 0.8em;
+            margin-left: 4px;
+            white-space: nowrap;
         }
         .carrito-item .btn-eliminar {
             background: none;
             border: none;
             color: var(--text-muted);
             cursor: pointer;
-            font-size: 0.9em;
-            padding: 4px 8px;
+            font-size: 0.7em;
+            padding: 4px 6px;
             transition: color 0.2s;
         }
-        .carrito-item .btn-eliminar:hover {
+        .carrito-item .btn-eliminar:active {
             color: var(--danger);
         }
+
         .carrito-total {
             display: flex;
             justify-content: space-between;
-            padding: 12px 0;
+            padding: 6px 0;
             border-top: 2px solid var(--border-color);
-            font-size: 1.2em;
+            font-size: 0.9em;
             font-weight: 700;
+            position: sticky;
+            bottom: 0;
+            background: var(--bg-card);
+            z-index: 5;
         }
         .carrito-total .total-label {
             color: var(--text-secondary);
@@ -149,90 +208,94 @@
             color: var(--accent-cyan);
         }
 
-        /* Panel de pago */
+        /* Panel de pago - siempre visible abajo */
         .pago-panel {
             border-top: 1px solid var(--border-color);
-            padding-top: 16px;
+            padding-top: 8px;
             margin-top: auto;
-        }
-        .pago-panel .pago-label {
-            color: var(--text-secondary);
-            font-size: 0.75em;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            flex-shrink: 0;
         }
 
-        /* Teclado numérico */
+        /* Teclado numérico - MÓVIL AMIGABLE */
         .teclado-numerico {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
-            margin: 8px 0 12px 0;
+            gap: 4px;
+            margin: 4px 0 8px 0;
         }
         .teclado-numerico .btn-billete {
             background: var(--bg-primary);
             color: var(--text-primary);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-sm);
-            padding: 10px 4px;
+            padding: 10px 2px;
             font-weight: 700;
-            font-size: 0.85em;
+            font-size: 0.8em;
             cursor: pointer;
-            transition: all 0.15s;
+            transition: all 0.1s;
             text-align: center;
+            -webkit-touch-callout: none;
+            user-select: none;
+            min-height: 44px;
+            touch-action: manipulation;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
-        .teclado-numerico .btn-billete:hover {
+        .teclado-numerico .btn-billete:active {
+            transform: scale(0.90);
             background: var(--accent-purple);
             color: white;
             border-color: var(--accent-purple);
-            transform: translateY(-1px);
-        }
-        .teclado-numerico .btn-billete:active {
-            transform: scale(0.93);
         }
         .teclado-numerico .btn-billete .sub-label {
             display: block;
             font-weight: 400;
-            font-size: 0.6em;
+            font-size: 0.5em;
             color: var(--text-muted);
+            line-height: 1.2;
         }
-        .teclado-numerico .btn-billete:hover .sub-label {
+        .teclado-numerico .btn-billete:active .sub-label {
             color: rgba(255,255,255,0.7);
         }
         .teclado-numerico .btn-limpiar {
-            background: rgba(239, 68, 68, 0.15);
+            background: rgba(239, 68, 68, 0.12);
             color: var(--danger);
             border-color: var(--danger);
         }
-        .teclado-numerico .btn-limpiar:hover {
+        .teclado-numerico .btn-limpiar:active {
             background: var(--danger);
             color: white;
         }
 
-        /* Campo de pago y vuelto */
+        /* Campo de pago y vuelto - visible y editable */
         .pago-vuelto {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 12px;
+            gap: 8px;
+            margin-bottom: 8px;
         }
         .pago-vuelto .campo {
             background: var(--bg-primary);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-sm);
-            padding: 10px 14px;
+            padding: 6px 8px;
             text-align: center;
         }
         .pago-vuelto .campo .label {
             color: var(--text-muted);
-            font-size: 0.7em;
+            font-size: 0.55em;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            display: block;
         }
         .pago-vuelto .campo .valor {
-            font-size: 1.6em;
+            font-size: 1.3em;
             font-weight: 700;
             font-family: 'Courier New', monospace;
+            display: block;
+            line-height: 1.3;
         }
         .pago-vuelto .campo .valor.recibido {
             color: var(--text-primary);
@@ -244,79 +307,188 @@
             color: var(--danger);
         }
 
-        /* Botón cobrar */
+        /* Input de pago - VISIBLE Y EDITABLE */
+        #pagoEfectivo {
+            width: 100%;
+            padding: 6px 8px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+            margin-top: 2px;
+        }
+        #pagoEfectivo:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+        }
+
+        /* Botón cobrar - MÓVIL AMIGABLE */
         .btn-cobrar {
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             background: linear-gradient(135deg, var(--success), #16a34a);
             color: white;
             border: none;
             border-radius: var(--radius-sm);
-            font-size: 1.1em;
+            font-size: 0.95em;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: 10px;
+            min-height: 48px;
+            touch-action: manipulation;
         }
-        .btn-cobrar:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(34, 197, 94, 0.3);
+        .btn-cobrar:active {
+            transform: scale(0.96);
         }
         .btn-cobrar:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
-            box-shadow: none;
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
+        /* Estado de caja */
+        #cajaInfo {
+            font-size: 0.7em;
+        }
+
+        /* ============================================
+           RESPONSIVE - MÓVIL
+           ============================================ */
+        @media (max-width: 480px) {
             .pos-container {
-                grid-template-columns: 1fr;
-                height: auto;
+                height: calc(100vh - 110px);
+                gap: 8px;
+            }
+            .productos-panel {
+                max-height: 130px;
+                padding: 8px;
             }
             .productos-grid {
-                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+                gap: 4px;
             }
-            .teclado-numerico {
-                grid-template-columns: repeat(5, 1fr);
+            .producto-item {
+                padding: 6px 2px;
+                min-height: 44px;
             }
-            .pago-vuelto {
-                grid-template-columns: 1fr 1fr;
+            .producto-item .prod-nombre {
+                font-size: 0.55em;
+            }
+            .producto-item .prod-precio {
+                font-size: 0.6em;
             }
             .caja-panel {
-                max-height: 500px;
+                padding: 8px;
+            }
+            .teclado-numerico {
+                gap: 3px;
+            }
+            .teclado-numerico .btn-billete {
+                padding: 8px 2px;
+                font-size: 0.7em;
+                min-height: 38px;
+            }
+            .teclado-numerico .btn-billete .sub-label {
+                font-size: 0.45em;
+            }
+            .pago-vuelto .campo {
+                padding: 4px 6px;
+            }
+            .pago-vuelto .campo .valor {
+                font-size: 1.1em;
+            }
+            .carrito-items {
+                max-height: 70px;
+            }
+            .carrito-item {
+                font-size: 0.65em;
+                padding: 3px 0;
+            }
+            .btn-cobrar {
+                padding: 10px;
+                font-size: 0.85em;
+                min-height: 40px;
+            }
+            .carrito-total {
+                font-size: 0.8em;
+                padding: 4px 0;
+            }
+            .carrito-header h3 {
+                font-size: 0.65em;
+            }
+            #pagoEfectivo {
+                font-size: 0.95em;
+                padding: 4px 6px;
             }
         }
-        @media (max-width: 480px) {
+
+        @media (max-width: 380px) {
+            .productos-grid {
+                grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            }
             .teclado-numerico {
                 grid-template-columns: repeat(4, 1fr);
             }
+            .producto-item .prod-nombre {
+                font-size: 0.5em;
+            }
         }
 
-        /* Scrollbar */
-        .carrito-items::-webkit-scrollbar {
-            width: 4px;
+        @media (min-width: 769px) {
+            .pos-container {
+                grid-template-columns: 1fr 420px;
+                height: calc(100vh - 180px);
+            }
+            .productos-panel {
+                max-height: none;
+            }
+            .productos-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+            .carrito-items {
+                max-height: 200px;
+            }
+            .producto-item {
+                min-height: 70px;
+            }
+            .producto-item .prod-nombre {
+                font-size: 0.8em;
+            }
+            .producto-item .prod-precio {
+                font-size: 0.9em;
+            }
         }
-        .carrito-items::-webkit-scrollbar-track {
-            background: transparent;
+
+        /* Animación de feedback al tocar */
+        .btn-billete, .producto-item, .btn-cobrar {
+            transition: transform 0.1s;
         }
-        .carrito-items::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 4px;
+
+        /* Scroll suave */
+        .carrito-wrapper {
+            scroll-behavior: smooth;
         }
-        .productos-panel::-webkit-scrollbar {
-            width: 4px;
-        }
-        .productos-panel::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .productos-panel::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 4px;
+
+        /* Badge de cantidad en carrito */
+        .carrito-count-badge {
+            background: var(--accent-purple);
+            color: white;
+            border-radius: 50%;
+            padding: 0 6px;
+            font-size: 0.6em;
+            font-weight: 700;
+            min-width: 18px;
+            text-align: center;
+            display: inline-block;
         }
     </style>
 </head>
@@ -325,8 +497,8 @@
         <aside class="sidebar">
             <div class="logo">LUMIRE <span>ERP</span></div>
             <nav>
-                <a href="dashboard.html"><i class="fas fa-chart-pie"></i> Panel de Control</a>
-                <a href="ventas.html" class="active"><i class="fas fa-cash-register"></i> Punto de Venta</a>
+                <a href="dashboard.html"><i class="fas fa-chart-pie"></i> Panel</a>
+                <a href="ventas.html" class="active"><i class="fas fa-cash-register"></i> Punto Venta</a>
                 <a href="productos.html"><i class="fas fa-boxes"></i> Productos</a>
                 <a href="recetas.html"><i class="fas fa-utensils"></i> Recetas</a>
                 <a href="inventario.html"><i class="fas fa-warehouse"></i> Inventario</a>
@@ -340,10 +512,10 @@
 
         <main class="main-content">
             <div class="top-bar">
-                <h1 style="font-size: 1.4em;"><i class="fas fa-cash-register" style="color: var(--accent-cyan);"></i> Punto de Venta</h1>
-                <div class="user-info">
-                    <span style="color: var(--text-muted); font-size: 0.85em;" id="cajaInfo">Caja: Cerrada</span>
-                    <div class="avatar">A</div>
+                <h1 style="font-size: 1.1em;"><i class="fas fa-cash-register" style="color: var(--accent-cyan);"></i> Punto de Venta</h1>
+                <div class="user-info" style="gap: 6px;">
+                    <span id="cajaInfo" style="color: var(--text-muted); font-size: 0.65em;">Caja: Cerrada</span>
+                    <div class="avatar" style="width: 30px; height: 30px; font-size: 0.7em;">A</div>
                 </div>
             </div>
 
@@ -357,57 +529,63 @@
                     <h3><i class="fas fa-box" style="color: var(--accent-purple);"></i> Productos</h3>
                     <div class="productos-grid" id="productosContainer">
                         <!-- Productos cargados dinámicamente -->
+                        <div style="color: var(--text-muted); text-align: center; grid-column: 1 / -1; font-size: 0.7em; padding: 8px 0;">
+                            <i class="fas fa-spinner fa-spin"></i> Cargando...
+                        </div>
                     </div>
                 </div>
 
                 <!-- Panel derecho: Caja Registradora -->
                 <div class="caja-panel">
-                    <!-- Carrito -->
-                    <div class="carrito-header">
-                        <h3><i class="fas fa-shopping-cart" style="color: var(--warning);"></i> Carrito</h3>
-                        <span style="color: var(--text-muted); font-size: 0.8em;" id="carritoCount">0 items</span>
-                    </div>
-                    <div class="carrito-items" id="carritoItems">
-                        <div style="color: var(--text-muted); text-align: center; padding: 20px 0; font-size: 0.9em;">
-                            <i class="fas fa-cart-plus" style="font-size: 2em; display: block; margin-bottom: 8px; opacity: 0.3;"></i>
-                            Agrega productos para comenzar
+                    <!-- Carrito con scroll automático -->
+                    <div class="carrito-wrapper" id="carritoWrapper">
+                        <div class="carrito-header">
+                            <h3><i class="fas fa-shopping-cart" style="color: var(--warning);"></i> Carrito <span id="carritoCount" class="carrito-count-badge">0</span></h3>
+                            <button onclick="vaciarCarrito()" style="background: none; border: none; color: var(--text-muted); font-size: 0.7em; cursor: pointer; padding: 4px 8px;">
+                                <i class="fas fa-trash"></i> Vaciar
+                            </button>
+                        </div>
+                        <div class="carrito-items" id="carritoItems">
+                            <div style="color: var(--text-muted); text-align: center; padding: 12px 0; font-size: 0.75em;">
+                                <i class="fas fa-cart-plus" style="font-size: 1.5em; display: block; margin-bottom: 4px; opacity: 0.3;"></i>
+                                Agrega productos
+                            </div>
+                        </div>
+                        <div class="carrito-total">
+                            <span class="total-label">Total</span>
+                            <span class="total-monto" id="carritoTotal">$0.00</span>
                         </div>
                     </div>
-                    <div class="carrito-total">
-                        <span class="total-label">Total</span>
-                        <span class="total-monto" id="carritoTotal">$0.00</span>
-                    </div>
 
-                    <!-- Panel de pago -->
+                    <!-- Panel de pago - SIEMPRE VISIBLE -->
                     <div class="pago-panel">
                         <!-- Teclado numérico de billetes -->
                         <div class="teclado-numerico">
-                            <button class="btn-billete" onclick="agregarMontoPago(1000)">$1000</button>
-                            <button class="btn-billete" onclick="agregarMontoPago(500)">$500</button>
-                            <button class="btn-billete" onclick="agregarMontoPago(200)">$200</button>
-                            <button class="btn-billete" onclick="agregarMontoPago(100)">$100</button>
-                            <button class="btn-billete" onclick="agregarMontoPago(50)">$50</button>
-                            <button class="btn-billete" onclick="agregarMontoPago(20)">$20</button>
-                            <button class="btn-billete" onclick="agregarMontoPago(10)">$10</button>
-                            <button class="btn-billete" onclick="agregarMontoPago(5)">$5</button>
-                            <button class="btn-billete" onclick="agregarMontoPago(1)">$1</button>
+                            <button class="btn-billete" data-monto="1000" onclick="agregarMontoPago(1000)">$1000</button>
+                            <button class="btn-billete" data-monto="500" onclick="agregarMontoPago(500)">$500</button>
+                            <button class="btn-billete" data-monto="200" onclick="agregarMontoPago(200)">$200</button>
+                            <button class="btn-billete" data-monto="100" onclick="agregarMontoPago(100)">$100</button>
+                            <button class="btn-billete" data-monto="50" onclick="agregarMontoPago(50)">$50</button>
+                            <button class="btn-billete" data-monto="20" onclick="agregarMontoPago(20)">$20</button>
+                            <button class="btn-billete" data-monto="10" onclick="agregarMontoPago(10)">$10</button>
+                            <button class="btn-billete" data-monto="5" onclick="agregarMontoPago(5)">$5</button>
+                            <button class="btn-billete" data-monto="1" onclick="agregarMontoPago(1)">$1</button>
                             <button class="btn-billete btn-limpiar" onclick="limpiarPago()">
                                 <i class="fas fa-eraser"></i>
                                 <span class="sub-label">Limpiar</span>
                             </button>
                         </div>
 
-                        <!-- Campo recibido y vuelto -->
+                        <!-- Campo recibido y vuelto - CON INPUT VISIBLE -->
                         <div class="pago-vuelto">
                             <div class="campo">
-                                <div class="label">Recibido</div>
-                                <div class="valor recibido" id="pagoDisplay">$0.00</div>
-                                <input type="number" id="pagoEfectivo" placeholder="Escribe o usa botones"
-                                       style="width: 100%; padding: 6px; background: transparent; border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary); text-align: center; font-size: 0.9em; margin-top: 4px; display: none;">
+                                <span class="label">Recibido</span>
+                                <span class="valor recibido" id="pagoDisplay">$0.00</span>
+                                <input type="number" id="pagoEfectivo" placeholder="Escribe el monto" step="0.01" min="0">
                             </div>
                             <div class="campo">
-                                <div class="label">Vuelto</div>
-                                <div class="valor vuelto" id="vueltoCliente">$0.00</div>
+                                <span class="label">Vuelto</span>
+                                <span class="valor vuelto" id="vueltoCliente">$0.00</span>
                             </div>
                         </div>
 
@@ -488,7 +666,46 @@
             }
         }
 
-        // 4. Sincronizar input con display
+        // 4. Vaciar carrito
+        function vaciarCarrito() {
+            if (typeof carrito !== 'undefined') {
+                if (carrito.length === 0) return;
+                if (!confirm('¿Vaciar todo el carrito?')) return;
+                carrito = [];
+                if (typeof actualizarCarrito === 'function') {
+                    actualizarCarrito();
+                }
+                limpiarPago();
+            }
+        }
+
+        // 5. SCROLL AUTOMÁTICO AL AGREGAR PRODUCTO (se llama desde app.js)
+        function scrollAlCarrito() {
+            const wrapper = document.getElementById('carritoWrapper');
+            if (wrapper) {
+                // En móvil, scrollear al carrito
+                if (window.innerWidth <= 768) {
+                    wrapper.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }
+                // También scrollear dentro del wrapper al final
+                setTimeout(() => {
+                    wrapper.scrollTop = wrapper.scrollHeight;
+                }, 100);
+            }
+        }
+
+        // 6. Sobrescribir agregarAlCarrito para incluir scroll
+        const originalAgregarAlCarrito = window.agregarAlCarrito;
+        if (typeof originalAgregarAlCarrito === 'function') {
+            window.agregarAlCarrito = function(producto) {
+                // Llamar a la función original
+                originalAgregarAlCarrito(producto);
+                // Hacer scroll automático
+                setTimeout(scrollAlCarrito, 50);
+            };
+        }
+
+        // 7. Sincronizar input con display
         document.addEventListener('DOMContentLoaded', function() {
             const pagoInput = document.getElementById('pagoEfectivo');
             const pagoDisplay = document.getElementById('pagoDisplay');
@@ -506,6 +723,11 @@
                         if (btnCobrar) btnCobrar.click();
                     }
                 });
+
+                // Enfocar el input al cargar para poder escribir directamente
+                setTimeout(() => {
+                    pagoInput.focus();
+                }, 300);
             }
 
             // Actualizar estado de caja
@@ -514,7 +736,7 @@
             }
         });
 
-        // 5. Función para cargar estado de caja (opcional)
+        // 8. Función para cargar estado de caja
         async function cargarEstadoCaja() {
             try {
                 const token = localStorage.getItem('token');
@@ -535,14 +757,29 @@
             }
         }
 
-        // Sobrescribir actualizarCarrito para actualizar vuelto
+        // 9. Sobrescribir actualizarCarrito para actualizar vuelto y contador
         const originalActualizarCarrito = window.actualizarCarrito;
         window.actualizarCarrito = function() {
             if (typeof originalActualizarCarrito === 'function') {
                 originalActualizarCarrito();
             }
+            // Actualizar contador
+            const countEl = document.getElementById('carritoCount');
+            if (countEl && typeof carrito !== 'undefined') {
+                countEl.textContent = carrito.length;
+            }
             setTimeout(calcularVuelto, 50);
         };
+
+        // 10. Si el usuario toca el campo de pago, seleccionar todo para escribir rápido
+        document.addEventListener('DOMContentLoaded', function() {
+            const pagoInput = document.getElementById('pagoEfectivo');
+            if (pagoInput) {
+                pagoInput.addEventListener('focus', function() {
+                    this.select();
+                });
+            }
+        });
     </script>
 </body>
 </html>
