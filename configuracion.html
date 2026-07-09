@@ -77,6 +77,40 @@
             color: var(--accent-purple);
             margin-right: 8px;
         }
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .password-wrapper input {
+            width: 100%;
+            padding-right: 45px;
+            margin-bottom: 12px;
+        }
+        .password-wrapper .toggle-btn {
+            position: absolute;
+            right: 14px;
+            top: 35%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.1em;
+            cursor: pointer;
+            padding: 4px;
+            z-index: 2;
+        }
+        .password-wrapper .toggle-btn:hover {
+            color: var(--text-primary);
+        }
+        .btn-cambiar {
+            background: var(--warning);
+            color: var(--bg-primary);
+        }
+        .btn-cambiar:hover {
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
@@ -121,20 +155,42 @@
                     <strong>⚠️ Importante:</strong> Guarda estos datos en un lugar seguro. Si los olvidas, tendrás que contactar al administrador.
                 </div>
 
-                <!-- Formulario para activar 2FA personalizado -->
+                <!-- Formulario para activar/cambiar 2FA -->
                 <div id="form2faPersonalizado" class="campo-personalizado">
                     <h4 style="color: var(--text-secondary); margin-bottom: 12px;">
-                        <i class="fas fa-key"></i> Configura tu 2FA
+                        <i class="fas fa-key"></i> <span id="formTitulo2fa">Configura tu 2FA</span>
                     </h4>
                     
+                    <!-- Solo para CAMBIAR 2FA -->
+                    <div id="cambiar2faSection" style="display: none;">
+                        <label style="color: var(--text-secondary); font-size: 0.85em;">Contraseña actual</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="passActual" placeholder="Ingresa tu contraseña actual">
+                            <button type="button" class="toggle-btn" onclick="togglePass('passActual', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
                     <label style="color: var(--text-secondary); font-size: 0.85em;">Clave secreta (elige una que recuerdes)</label>
-                    <input type="text" id="clavePersonal" placeholder="Ej: MINEgocio2025" minlength="8">
+                    <div class="password-wrapper">
+                        <input type="password" id="clavePersonal" placeholder="Ej: MINEgocio2025" minlength="8">
+                        <button type="button" class="toggle-btn" onclick="togglePass('clavePersonal', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                     
                     <label style="color: var(--text-secondary); font-size: 0.85em;">Código de verificación (6 dígitos)</label>
-                    <input type="text" id="codigoPersonal" placeholder="Ej: 123456" maxlength="6" minlength="6">
+                    <div class="password-wrapper">
+                        <input type="password" id="codigoPersonal" placeholder="Ej: 123456" maxlength="6" minlength="6">
+                        <button type="button" class="toggle-btn" onclick="togglePass('codigoPersonal', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                     
                     <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                         <button class="btn-2fa" id="btnActivar2faPersonal">✅ Activar 2FA</button>
+                        <button class="btn-2fa btn-cambiar" id="btnCambiar2faPersonal" style="display: none;">🔄 Cambiar 2FA</button>
                         <button class="btn-2fa" id="btnCancelar2faPersonal" style="background: var(--danger);">❌ Cancelar</button>
                     </div>
                 </div>
@@ -151,6 +207,21 @@
         const API_URL = 'https://lumire-erp-backend.onrender.com/api';
         let token = localStorage.getItem('token');
 
+        // ========== FUNCIÓN TOGGLE PASSWORD ==========
+        function togglePass(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+            input.focus();
+        }
+
         // ========== CERRAR SESIÓN ==========
         document.getElementById('logoutBtn')?.addEventListener('click', () => {
             localStorage.removeItem('token');
@@ -165,6 +236,14 @@
                 });
                 const user = await res.json();
                 const statusDiv = document.getElementById('status2fa');
+                const btnMostrar = document.getElementById('btnMostrarFormulario');
+                const btnDesactivar = document.getElementById('btnDesactivar2fa');
+                const form = document.getElementById('form2faPersonalizado');
+                const titulo = document.getElementById('formTitulo2fa');
+                const btnActivar = document.getElementById('btnActivar2faPersonal');
+                const btnCambiar = document.getElementById('btnCambiar2faPersonal');
+                const cambiarSection = document.getElementById('cambiar2faSection');
+
                 if (user['2fa_habilitado']) {
                     statusDiv.innerHTML = `
                         <p style="color: var(--text-secondary);">
@@ -174,9 +253,15 @@
                             </span>
                         </p>
                     `;
-                    document.getElementById('btnMostrarFormulario').style.display = 'none';
-                    document.getElementById('btnDesactivar2fa').style.display = 'inline-block';
-                    document.getElementById('form2faPersonalizado').classList.remove('visible');
+                    btnMostrar.textContent = '🔄 Cambiar 2FA';
+                    btnMostrar.style.display = 'inline-block';
+                    btnDesactivar.style.display = 'inline-block';
+                    btnActivar.style.display = 'none';
+                    btnCambiar.style.display = 'inline-block';
+                    cambiarSection.style.display = 'block';
+                    titulo.textContent = 'Cambiar tu 2FA';
+                    document.getElementById('passActual').value = '';
+                    form.classList.remove('visible');
                 } else {
                     statusDiv.innerHTML = `
                         <p style="color: var(--text-secondary);">
@@ -184,8 +269,15 @@
                             <span style="margin-left: 16px; font-size: 0.9em;">La verificación en dos pasos no está activa.</span>
                         </p>
                     `;
-                    document.getElementById('btnMostrarFormulario').style.display = 'inline-block';
-                    document.getElementById('btnDesactivar2fa').style.display = 'none';
+                    btnMostrar.textContent = '🔐 Activar 2FA';
+                    btnMostrar.style.display = 'inline-block';
+                    btnDesactivar.style.display = 'none';
+                    btnActivar.style.display = 'inline-block';
+                    btnCambiar.style.display = 'none';
+                    cambiarSection.style.display = 'none';
+                    titulo.textContent = 'Configura tu 2FA';
+                    document.getElementById('passActual').value = '';
+                    form.classList.remove('visible');
                 }
             } catch (e) {
                 document.getElementById('status2fa').innerHTML = '<p style="color: var(--danger);">Error al cargar el estado</p>';
@@ -193,32 +285,56 @@
         }
 
         // ========== MOSTRAR FORMULARIO ==========
-        document.getElementById('btnMostrarFormulario')?.addEventListener('click', function() {
+        document.getElementById('btnMostrarFormulario')?.addEventListener('click', async function() {
             const form = document.getElementById('form2faPersonalizado');
+            const titulo = document.getElementById('formTitulo2fa');
+            const btnActivar = document.getElementById('btnActivar2faPersonal');
+            const btnCambiar = document.getElementById('btnCambiar2faPersonal');
+            const cambiarSection = document.getElementById('cambiar2faSection');
+
+            // Verificar estado actual
+            const res = await fetch(`${API_URL}/usuarios/me`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const user = await res.json();
+
+            if (user['2fa_habilitado']) {
+                titulo.textContent = 'Cambiar tu 2FA';
+                cambiarSection.style.display = 'block';
+                btnActivar.style.display = 'none';
+                btnCambiar.style.display = 'inline-block';
+                document.getElementById('passActual').value = '';
+            } else {
+                titulo.textContent = 'Configura tu 2FA';
+                cambiarSection.style.display = 'none';
+                btnActivar.style.display = 'inline-block';
+                btnCambiar.style.display = 'none';
+            }
+
             form.classList.toggle('visible');
+            document.getElementById('clavePersonal').value = '';
+            document.getElementById('codigoPersonal').value = '';
             if (form.classList.contains('visible')) {
                 this.textContent = '❌ Ocultar formulario';
             } else {
-                this.textContent = '🔐 Activar 2FA';
-                document.getElementById('clavePersonal').value = '';
-                document.getElementById('codigoPersonal').value = '';
+                this.textContent = user['2fa_habilitado'] ? '🔄 Cambiar 2FA' : '🔐 Activar 2FA';
             }
         });
 
         // ========== CANCELAR ==========
         document.getElementById('btnCancelar2faPersonal')?.addEventListener('click', function() {
             document.getElementById('form2faPersonalizado').classList.remove('visible');
-            document.getElementById('btnMostrarFormulario').textContent = '🔐 Activar 2FA';
+            document.getElementById('btnMostrarFormulario').textContent = document.getElementById('btnMostrarFormulario').textContent.includes('Cambiar') ? '🔄 Cambiar 2FA' : '🔐 Activar 2FA';
             document.getElementById('clavePersonal').value = '';
             document.getElementById('codigoPersonal').value = '';
+            document.getElementById('passActual').value = '';
         });
 
-        // ========== ACTIVAR 2FA PERSONALIZADO ==========
+        // ========== ACTIVAR 2FA ==========
         document.getElementById('btnActivar2faPersonal')?.addEventListener('click', async function() {
             const clave = document.getElementById('clavePersonal').value.trim();
             const codigo = document.getElementById('codigoPersonal').value.trim();
 
-            // Validaciones
             if (!clave || clave.length < 8) {
                 alert('❌ La clave secreta debe tener al menos 8 caracteres.');
                 document.getElementById('clavePersonal').focus();
@@ -248,12 +364,67 @@
                 if (res.ok) {
                     alert(`✅ 2FA activado correctamente.\n\nTu clave secreta: ${clave}\nTu código de verificación: ${codigo}\n\n¡Guárdalos en un lugar seguro!`);
                     document.getElementById('form2faPersonalizado').classList.remove('visible');
-                    document.getElementById('btnMostrarFormulario').textContent = '🔐 Activar 2FA';
+                    document.getElementById('btnMostrarFormulario').textContent = '🔄 Cambiar 2FA';
                     document.getElementById('clavePersonal').value = '';
                     document.getElementById('codigoPersonal').value = '';
                     verificarEstado2FA();
                 } else {
                     alert('❌ Error: ' + (data.detail || 'No se pudo activar 2FA'));
+                }
+            } catch (e) {
+                alert('Error de conexión: ' + e.message);
+            }
+        });
+
+        // ========== CAMBIAR 2FA ==========
+        document.getElementById('btnCambiar2faPersonal')?.addEventListener('click', async function() {
+            const passActual = document.getElementById('passActual').value.trim();
+            const clave = document.getElementById('clavePersonal').value.trim();
+            const codigo = document.getElementById('codigoPersonal').value.trim();
+
+            if (!passActual) {
+                alert('❌ Ingresa tu contraseña actual.');
+                document.getElementById('passActual').focus();
+                return;
+            }
+
+            if (!clave || clave.length < 8) {
+                alert('❌ La nueva clave secreta debe tener al menos 8 caracteres.');
+                document.getElementById('clavePersonal').focus();
+                return;
+            }
+
+            if (!codigo || codigo.length !== 6 || !/^\d+$/.test(codigo)) {
+                alert('❌ El nuevo código de verificación debe ser exactamente 6 dígitos numéricos.');
+                document.getElementById('codigoPersonal').focus();
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/auth/cambiar-2fa`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        password: passActual,
+                        nueva_clave: clave,
+                        nuevo_codigo: codigo
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    alert(`✅ 2FA actualizado correctamente.\n\nNueva clave secreta: ${clave}\nNuevo código de verificación: ${codigo}\n\n¡Guárdalos en un lugar seguro!`);
+                    document.getElementById('form2faPersonalizado').classList.remove('visible');
+                    document.getElementById('btnMostrarFormulario').textContent = '🔄 Cambiar 2FA';
+                    document.getElementById('clavePersonal').value = '';
+                    document.getElementById('codigoPersonal').value = '';
+                    document.getElementById('passActual').value = '';
+                    verificarEstado2FA();
+                } else {
+                    alert('❌ Error: ' + (data.detail || 'No se pudo cambiar 2FA'));
                 }
             } catch (e) {
                 alert('Error de conexión: ' + e.message);

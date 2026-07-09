@@ -69,6 +69,24 @@ async function cargarUsuariosLogin() {
 }
 
 // ============================================
+// FUNCIÓN TOGGLE PARA 2FA
+// ============================================
+
+function togglePass2fa(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+    input.focus();
+}
+
+// ============================================
 // 2. DASHBOARD
 // ============================================
 
@@ -103,23 +121,20 @@ async function loadDashboard() {
         const totalVentasElem = document.getElementById('totalVentas');
         if (totalVentasElem) totalVentasElem.textContent = `$${totalVentas}`;
         
-    } catch (error) {
-        console.error('Error en dashboard:', error);
-        const container = document.getElementById('dashboardContent');
-        if (container) {
-            container.innerHTML = `<div style="color:red; padding:20px;">Error al cargar datos: ${error.message}</div>`;
-        }
-    }
-    // En loadDashboard(), después de cargar productos y ventas
-    try {
+        // Cargar usuarios
         const usuariosRes = await fetch(`${API_URL}/usuarios/public`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const usuarios = await usuariosRes.json();
         const totalUsuariosElem = document.getElementById('totalUsuarios');
         if (totalUsuariosElem) totalUsuariosElem.textContent = usuarios.length;
-    } catch (e) {
-        console.error('Error cargando usuarios:', e);
+        
+    } catch (error) {
+        console.error('Error en dashboard:', error);
+        const container = document.getElementById('dashboardContent');
+        if (container) {
+            container.innerHTML = `<div style="color:red; padding:20px;">Error al cargar datos: ${error.message}</div>`;
+        }
     }
 }
 
@@ -245,12 +260,10 @@ document.addEventListener('DOMContentLoaded', function() {
         cargarUsuariosLogin();
         
         // ============================================
-        // BOTÓN OJO - VERSIÓN MEJORADA
+        // BOTÓN OJO - LOGIN PRINCIPAL
         // ============================================
         const toggleBtn = document.getElementById('togglePassword');
         const pwdField = document.getElementById('password');
-        console.log('toggleBtn:', toggleBtn);
-        console.log('pwdField:', pwdField);
         
         if (toggleBtn && pwdField) {
             toggleBtn.addEventListener('click', function(e) {
@@ -264,11 +277,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     this.textContent = '👁️';
                 }
                 pwdField.focus();
-                console.log('Cambiado a:', pwdField.type);
             });
-            console.log('Event listener del ojo asignado');
-        } else {
-            console.error('No se encontró toggleBtn o pwdField');
         }
 
         // Selector de usuario
@@ -285,7 +294,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Login con 2FA
+        // ============================================
+        // LOGIN CON 2FA Y RECUPERACIÓN
+        // ============================================
         const loginBtn = document.getElementById('loginBtn');
         const errorMsg = document.getElementById('errorMsg');
         if (loginBtn) {
@@ -316,7 +327,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (response.ok) {
                         // Si requiere 2FA
                         if (data.requires_2fa) {
-                            // Guardar temporal_token y mostrar campo de código
                             localStorage.setItem('temporal_token', data.temporal_token);
                             show2FAForm(data.temporal_token);
                             return;
@@ -338,64 +348,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
-
-        function show2FAForm(temporal_token) {
-            const loginBox = document.querySelector('.login-box');
-            // Ocultar campos de login
-            document.getElementById('email').style.display = 'none';
-            document.getElementById('password').style.display = 'none';
-            document.getElementById('loginBtn').style.display = 'none';
-            document.querySelector('.checkbox-group').style.display = 'none';
-            
-            // Mostrar campo de 2FA
-            const div = document.createElement('div');
-            div.id = '2fa-section';
-            div.innerHTML = `
-                <div class="input-group">
-                    <label>Código de verificación</label>
-                    <input type="text" id="codigo2fa" placeholder="Ingresa los 6 dígitos" maxlength="6">
-                </div>
-                <button class="btn-primary" id="btnVerificar2fa">
-                    <i class="fas fa-check"></i> Verificar
-                </button>
-                <div id="error2fa" class="error"></div>
-            `;
-            loginBox.appendChild(div);
-            
-            document.getElementById('btnVerificar2fa')?.addEventListener('click', async function() {
-                const codigo = document.getElementById('codigo2fa').value.trim();
-                const errorDiv = document.getElementById('error2fa');
-                
-                if (!codigo || codigo.length !== 6) {
-                    errorDiv.textContent = 'Ingresa los 6 dígitos del código';
-                    return;
-                }
-                
-                try {
-                    const response = await fetch(`${API_URL}/auth/verify-2fa`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            temporal_token: temporal_token,
-                            codigo: codigo
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (response.ok) {
-                        localStorage.setItem('token', data.access_token);
-                        window.location.href = 'dashboard.html';
-                    } else {
-                        errorDiv.textContent = data.detail || 'Código inválido';
-                    }
-                } catch (error) {
-                    errorDiv.textContent = 'Error de conexión';
-                }
-            });
-        }
         
-        // Enter
+        // Enter para login
         const pwdEnter = document.getElementById('password');
         if (pwdEnter) {
             pwdEnter.addEventListener('keypress', function(e) {
@@ -439,3 +393,140 @@ document.addEventListener('DOMContentLoaded', function() {
         if (logoutBtn) logoutBtn.addEventListener('click', logout);
     }
 });
+
+// ============================================
+// FUNCIÓN show2FAForm (VERSIÓN MEJORADA)
+// ============================================
+
+function show2FAForm(temporal_token) {
+    const loginBox = document.querySelector('.login-box');
+    
+    // Ocultar TODO el login anterior
+    document.querySelectorAll('.input-group, .checkbox-group, #loginBtn, .subtitle').forEach(el => {
+        if (el) el.style.display = 'none';
+    });
+    
+    // Mostrar solo título y formulario 2FA
+    const div = document.createElement('div');
+    div.id = '2fa-section';
+    div.style.cssText = 'padding: 10px 0;';
+    div.innerHTML = `
+        <h2 style="text-align: center; color: var(--text-primary); margin-bottom: 20px; font-size: 1.4em;">
+            <i class="fas fa-shield-alt" style="color: var(--accent-cyan);"></i> Verificación en Dos Pasos
+        </h2>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 0.9em; margin-bottom: 24px;">
+            Ingresa el código de 6 dígitos que configuraste
+        </p>
+        <div class="input-group">
+            <label style="color: var(--text-secondary); text-transform: uppercase; font-size: 0.75em; letter-spacing: 0.5px;">Código de verificación</label>
+            <div class="password-wrapper">
+                <input type="password" id="codigo2fa" placeholder="Ej: 123456" maxlength="6" style="font-size: 1.2em; letter-spacing: 4px; text-align: center; font-family: 'Courier New', monospace;">
+                <button type="button" class="toggle-btn" onclick="togglePass2fa('codigo2fa', this)" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); font-size: 1.1em; cursor: pointer;">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+        </div>
+        <button class="btn-primary" id="btnVerificar2fa" style="margin-top: 8px;">
+            <i class="fas fa-check"></i> Verificar
+        </button>
+        <div id="error2fa" class="error" style="margin-top: 12px;"></div>
+        <div id="bloqueo2fa" style="display: none; margin-top: 16px; padding: 16px; background: rgba(239, 68, 68, 0.1); border-radius: var(--radius-sm); border: 1px solid var(--danger);">
+            <p style="color: var(--danger);"><strong><i class="fas fa-lock"></i> Cuenta bloqueada</strong></p>
+            <p style="color: var(--text-secondary); font-size: 0.9em;">Ingresa tu <strong>CLAVE SECRETA</strong> para desbloquear:</p>
+            <div class="password-wrapper">
+                <input type="password" id="claveSecretaDesbloqueo" placeholder="Ingresa tu clave secreta" style="width: 100%; padding: 10px; margin: 8px 0; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary);">
+                <button type="button" class="toggle-btn" onclick="togglePass2fa('claveSecretaDesbloqueo', this)" style="position: absolute; right: 14px; top: 55%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); font-size: 1.1em; cursor: pointer;">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+            <button class="btn-primary" id="btnDesbloquear2fa" style="background: var(--warning); color: var(--bg-primary);">
+                <i class="fas fa-unlock"></i> Desbloquear
+            </button>
+            <div id="errorClave" class="error" style="margin-top: 8px;"></div>
+        </div>
+    `;
+    loginBox.appendChild(div);
+    
+    // ============================================
+    // EVENTO: VERIFICAR 2FA
+    // ============================================
+    document.getElementById('btnVerificar2fa')?.addEventListener('click', async function() {
+        const codigo = document.getElementById('codigo2fa').value.trim();
+        const errorDiv = document.getElementById('error2fa');
+        
+        if (!codigo || codigo.length !== 6) {
+            errorDiv.textContent = 'Ingresa los 6 dígitos del código';
+            return;
+        }
+        
+        try {
+            const response = await fetch(`${API_URL}/auth/verify-2fa`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    temporal_token: temporal_token,
+                    codigo: codigo
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                localStorage.setItem('token', data.access_token);
+                window.location.href = 'dashboard.html';
+            } else {
+                // Verificar si es un error de bloqueo (3 intentos fallidos)
+                if (response.status === 403 && data.detail && data.detail.includes('bloqueada')) {
+                    document.getElementById('error2fa').style.display = 'none';
+                    document.getElementById('bloqueo2fa').style.display = 'block';
+                    document.getElementById('errorClave').textContent = '';
+                } else {
+                    errorDiv.textContent = data.detail || 'Código inválido';
+                }
+            }
+        } catch (error) {
+            errorDiv.textContent = 'Error de conexión';
+        }
+    });
+    
+    // ============================================
+    // EVENTO: DESBLOQUEAR CON CLAVE SECRETA
+    // ============================================
+    document.getElementById('btnDesbloquear2fa')?.addEventListener('click', async function() {
+        const email = document.getElementById('email')?.value;
+        const clave = document.getElementById('claveSecretaDesbloqueo').value.trim();
+        const errorDiv = document.getElementById('errorClave');
+        
+        if (!clave) {
+            errorDiv.textContent = 'Ingresa tu clave secreta';
+            return;
+        }
+        
+        try {
+            const response = await fetch(`${API_URL}/auth/desbloquear-2fa`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: email,
+                    clave_secreta: clave
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert('✅ Cuenta desbloqueada. Ahora puedes iniciar sesión.');
+                window.location.reload();
+            } else {
+                // Si el error contiene WhatsApp, mostrarlo con formato
+                if (data.detail && data.detail.includes('WhatsApp')) {
+                    errorDiv.innerHTML = data.detail.replace(/\n/g, '<br>');
+                } else {
+                    errorDiv.textContent = data.detail || 'Error al desbloquear';
+                }
+            }
+        } catch (error) {
+            errorDiv.textContent = 'Error de conexión';
+        }
+    });
+}
