@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>LUMIRE ERP - Módulos</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .modulo-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+        .modulo-card:hover {
+            border-color: var(--accent-purple);
+        }
+        .modulo-card .info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
+        .modulo-card .info .icono {
+            font-size: 1.6em;
+            color: var(--accent-purple);
+            width: 40px;
+            text-align: center;
+        }
+        .modulo-card .info .nombre {
+            font-weight: 600;
+            font-size: 1em;
+        }
+        .modulo-card .info .descripcion {
+            color: var(--text-muted);
+            font-size: 0.85em;
+        }
+        .modulo-card .acciones {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            transition: .3s;
+            border-radius: 28px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-muted);
+            transition: .3s;
+            border-radius: 50%;
+        }
+        .switch input:checked + .slider {
+            background: var(--success);
+            border-color: var(--success);
+        }
+        .switch input:checked + .slider:before {
+            transform: translateX(22px);
+            background-color: white;
+        }
+        .badge-activo {
+            background: var(--success);
+            color: white;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+        .badge-inactivo {
+            background: var(--danger);
+            color: white;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+        .btn-config {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 0.75em;
+            transition: all 0.2s;
+        }
+        .btn-config:hover {
+            opacity: 0.8;
+        }
+        .modal-config {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-config.active {
+            display: flex;
+        }
+        .modal-config .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+        }
+        .modal-config .modal-content h3 {
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        .modal-config .modal-content textarea {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: monospace;
+            min-height: 150px;
+            resize: vertical;
+        }
+        .modal-config .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            justify-content: flex-end;
+        }
+        .modal-config .modal-buttons button {
+            padding: 10px 24px;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .modal-config .modal-buttons .btn-guardar {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+        }
+        .modal-config .modal-buttons .btn-cerrar {
+            background: var(--danger);
+            color: white;
+        }
+        .modal-config .modal-buttons button:hover {
+            opacity: 0.8;
+        }
+        .resumen-modulos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .resumen-modulos .item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            text-align: center;
+        }
+        .resumen-modulos .item .numero {
+            font-size: 2em;
+            font-weight: 700;
+        }
+        .resumen-modulos .item .label {
+            color: var(--text-muted);
+            font-size: 0.8em;
+        }
+        .resumen-modulos .item.activos .numero { color: var(--success); }
+        .resumen-modulos .item.inactivos .numero { color: var(--danger); }
+        .resumen-modulos .item.total .numero { color: var(--accent-purple); }
+    </style>
+</head>
+
+<script>
+    // ============================================
+    // MENÚ DINÁMICO - CARGAR MÓDULOS ACTIVOS
+    // ============================================
+    async function cargarMenuDinamico() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = 'index.html';
+            return;
+        }
+
+        try {
+            const res = await fetch('https://lumire-erp-backend.onrender.com/api/modulos/menu', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const menu = await res.json();
+            
+            const nav = document.querySelector('nav');
+            if (!nav) return;
+
+            let html = '';
+            menu.forEach(item => {
+                const active = window.location.pathname.includes(item.ruta) ? 'active' : '';
+                html += `
+                    <a href="${item.ruta}" class="${active}">
+                        <i class="fas ${item.icono}"></i> ${item.nombre}
+                    </a>
+                `;
+            });
+            html += `
+                <a href="#" id="logoutBtn" class="logout">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </a>
+            `;
+            nav.innerHTML = html;
+
+            // Agregar evento logout
+            document.getElementById('logoutBtn')?.addEventListener('click', () => {
+                localStorage.removeItem('token');
+                window.location.href = 'index.html';
+            });
+
+        } catch (e) {
+            console.error('Error cargando menú:', e);
+        }
+    }
+
+    // Cargar menú cuando la página esté lista
+    document.addEventListener('DOMContentLoaded', cargarMenuDinamico);
+</script>
+
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">LUMIRE <span>ERP</span></div>
+            <nav id="menuDinamico">
+                <!-- Menú cargado dinámicamente -->
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <h1><i class="fas fa-puzzle-piece" style="color: var(--accent-purple);"></i> Módulos del Sistema</h1>
+                <div class="user-info">
+                    <div class="avatar">A</div>
+                </div>
+            </div>
+
+            <!-- Resumen -->
+            <div class="resumen-modulos" id="resumenModulos">
+                <div class="item total">
+                    <div class="numero" id="totalModulos">0</div>
+                    <div class="label">Total Módulos</div>
+                </div>
+                <div class="item activos">
+                    <div class="numero" id="modulosActivos">0</div>
+                    <div class="label">Activos</div>
+                </div>
+                <div class="item inactivos">
+                    <div class="numero" id="modulosInactivos">0</div>
+                    <div class="label">Inactivos</div>
+                </div>
+            </div>
+
+            <!-- Lista de módulos -->
+            <div class="card" style="padding: 20px;">
+                <h3 style="font-size: 1em; margin-bottom: 16px; color: var(--text-secondary);">
+                    <i class="fas fa-list"></i> Todos los Módulos
+                </h3>
+                <div id="listaModulos">
+                    <div style="color: var(--text-muted);">Cargando módulos...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Configuración -->
+    <div id="modalConfig" class="modal-config">
+        <div class="modal-content">
+            <h3><i class="fas fa-cog"></i> Configurar Módulo</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 12px;">
+                <strong id="configModuloNombre"></strong>
+            </p>
+            <textarea id="configModuloJson" placeholder="Configuración en formato JSON"></textarea>
+            <div class="modal-buttons">
+                <button class="btn-guardar" onclick="guardarConfiguracion()">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+                <button class="btn-cerrar" onclick="cerrarModalConfig()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://lumire-erp-backend.onrender.com/api';
+        let token = localStorage.getItem('token');
+        let moduloConfigId = null;
+
+        // ============================================
+        // CERRAR SESIÓN
+        // ============================================
+        document.getElementById('logoutBtn')?.addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        });
+
+        // ============================================
+        // CARGAR MENÚ DINÁMICO
+        // ============================================
+        async function cargarMenu() {
+            try {
+                const res = await fetch(`${API_URL}/modulos/menu`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const menu = await res.json();
+                
+                const nav = document.getElementById('menuDinamico');
+                let html = '';
+                menu.forEach(item => {
+                    const active = window.location.pathname.includes(item.ruta) ? 'active' : '';
+                    html += `
+                        <a href="${item.ruta}" class="${active}">
+                            <i class="fas ${item.icono}"></i> ${item.nombre}
+                        </a>
+                    `;
+                });
+                html += `
+                    <a href="#" id="logoutBtn" class="logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Salir
+                    </a>
+                `;
+                nav.innerHTML = html;
+            } catch (e) {
+                console.error('Error cargando menú:', e);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        }
+
+        // ============================================
+        // CARGAR MÓDULOS
+        // ============================================
+        async function cargarModulos() {
+            const container = document.getElementById('listaModulos');
+            container.innerHTML = '<div style="color: var(--text-muted);">Cargando módulos...</div>';
+
+            try {
+                // Obtener todos los módulos
+                const resModulos = await fetch(`${API_URL}/modulos/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const modulos = await resModulos.json();
+
+                // Obtener configuración de la empresa
+                const resEmpresa = await fetch(`${API_URL}/modulos/empresa`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const empresaModulos = await resEmpresa.json();
+
+                // Mapa de módulos activos
+                const activosMap = {};
+                empresaModulos.forEach(em => {
+                    activosMap[em.modulo_id] = em;
+                });
+
+                // Actualizar resumen
+                const total = modulos.length;
+                const activos = Object.keys(activosMap).filter(id => activosMap[id].activo).length;
+                const inactivos = total - activos;
+                document.getElementById('totalModulos').textContent = total;
+                document.getElementById('modulosActivos').textContent = activos;
+                document.getElementById('modulosInactivos').textContent = inactivos;
+
+                if (!modulos || modulos.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted);">No hay módulos disponibles</div>';
+                    return;
+                }
+
+                let html = '';
+                modulos.forEach(m => {
+                    const isActive = activosMap[m.id]?.activo || false;
+                    const config = activosMap[m.id]?.configuracion || null;
+                    const configStr = config ? JSON.stringify(config, null, 2) : '{}';
+
+                    html += `
+                        <div class="modulo-card">
+                            <div class="info">
+                                <span class="icono"><i class="fas ${m.icono || 'fa-cube'}"></i></span>
+                                <div>
+                                    <div class="nombre">${m.nombre}</div>
+                                    <div class="descripcion">${m.descripcion || 'Sin descripción'}</div>
+                                    <span style="font-size: 0.7em; color: var(--text-muted);">${m.codigo}</span>
+                                    ${isActive ? '<span class="badge-activo">ACTIVO</span>' : '<span class="badge-inactivo">INACTIVO</span>'}
+                                </div>
+                            </div>
+                            <div class="acciones">
+                                <button class="btn-config" onclick="abrirConfig(${m.id}, '${m.nombre}', '${configStr.replace(/'/g, "\\'")}')">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                                <label class="switch">
+                                    <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleModulo(${m.id}, this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = '<div style="color: var(--danger);">Error cargando módulos</div>';
+                console.error(e);
+            }
+        }
+
+        // ============================================
+        // ACTIVAR/DESACTIVAR MÓDULO
+        // ============================================
+        async function toggleModulo(moduloId, activo) {
+            try {
+                const res = await fetch(`${API_URL}/modulos/activar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        modulo_id: moduloId,
+                        activo: activo
+                    })
+                });
+                if (res.ok) {
+                    cargarModulos();
+                    cargarMenu(); // Actualizar menú
+                } else {
+                    const error = await res.json();
+                    alert('Error: ' + JSON.stringify(error));
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        }
+
+        // ============================================
+        // CONFIGURACIÓN DE MÓDULO
+        // ============================================
+        function abrirConfig(moduloId, nombre, configStr) {
+            moduloConfigId = moduloId;
+            document.getElementById('configModuloNombre').textContent = nombre;
+            document.getElementById('configModuloJson').value = configStr;
+            document.getElementById('modalConfig').classList.add('active');
+        }
+
+        function cerrarModalConfig() {
+            document.getElementById('modalConfig').classList.remove('active');
+            moduloConfigId = null;
+        }
+
+        async function guardarConfiguracion() {
+            if (!moduloConfigId) return;
+
+            const configJson = document.getElementById('configModuloJson').value;
+            let config;
+            try {
+                config = JSON.parse(configJson);
+            } catch (e) {
+                alert('❌ Error: El JSON no es válido');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/modulos/configurar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        modulo_id: moduloConfigId,
+                        configuracion: config
+                    })
+                });
+                if (res.ok) {
+                    alert('✅ Configuración guardada');
+                    cerrarModalConfig();
+                    cargarModulos();
+                } else {
+                    const error = await res.json();
+                    alert('Error: ' + JSON.stringify(error));
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        }
+
+        // Cerrar modal al hacer clic fuera
+        document.getElementById('modalConfig')?.addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) cerrarModalConfig();
+        });
+
+        // ============================================
+        // INICIAR
+        // ============================================
+        async function init() {
+            if (!token) {
+                window.location.href = 'index.html';
+                return;
+            }
+            await cargarMenu();
+            await cargarModulos();
+        }
+
+        init();
+    </script>
+</body>
+</html>

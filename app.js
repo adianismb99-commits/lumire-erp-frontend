@@ -642,3 +642,55 @@ function show2FAForm(temporal_token) {
         }
     });
 }
+
+// ============================================
+// FUNCIÓN GLOBAL PARA CARGAR MENÚ DINÁMICO
+// ============================================
+
+async function cargarMenuDinamico(selector = 'nav') {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = 'index.html';
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/modulos/menu`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const menu = await res.json();
+        
+        const nav = document.querySelector(selector);
+        if (!nav) return;
+
+        let html = '';
+        // Mantener el logo si existe
+        const logo = nav.querySelector('.logo');
+        if (logo) {
+            html += logo.outerHTML;
+        }
+
+        menu.forEach(item => {
+            const active = window.location.pathname.includes(item.ruta) ? 'active' : '';
+            html += `
+                <a href="${item.ruta}" class="${active}">
+                    <i class="fas ${item.icono}"></i> ${item.nombre}
+                </a>
+            `;
+        });
+        html += `
+            <a href="#" id="logoutBtn" class="logout">
+                <i class="fas fa-sign-out-alt"></i> Salir
+            </a>
+        `;
+        nav.innerHTML = html;
+
+        document.getElementById('logoutBtn')?.addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        });
+
+    } catch (e) {
+        console.error('Error cargando menú:', e);
+    }
+}

@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>LUMIRE ERP - Clientes</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .cliente-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .cliente-card:hover {
+            border-color: var(--accent-purple);
+        }
+        .cliente-card .info {
+            flex: 1;
+        }
+        .cliente-card .info .nombre {
+            font-weight: 600;
+            font-size: 1em;
+        }
+        .cliente-card .info .detalles {
+            color: var(--text-muted);
+            font-size: 0.85em;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+        .cliente-card .info .detalles span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .cliente-card .acciones {
+            display: flex;
+            gap: 8px;
+        }
+        .cliente-card .acciones button {
+            padding: 6px 14px;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.75em;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-editar-cliente {
+            background: var(--accent-blue);
+            color: white;
+        }
+        .btn-editar-cliente:hover {
+            opacity: 0.8;
+        }
+        .btn-eliminar-cliente {
+            background: var(--danger);
+            color: white;
+        }
+        .btn-eliminar-cliente:hover {
+            opacity: 0.8;
+        }
+        .btn-historial {
+            background: var(--accent-purple);
+            color: white;
+        }
+        .btn-historial:hover {
+            opacity: 0.8;
+        }
+        .badge-cliente {
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+        .badge-cliente.activo {
+            background: var(--success);
+            color: white;
+        }
+        .badge-cliente.inactivo {
+            background: var(--danger);
+            color: white;
+        }
+        .search-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .search-bar input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 16px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 0.95em;
+        }
+        .search-bar input:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+        }
+        .search-bar .btn-buscar {
+            padding: 12px 24px;
+            background: var(--accent-purple);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .search-bar .btn-buscar:hover {
+            opacity: 0.8;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 32px;
+            max-width: 550px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-content h3 {
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        .modal-content label {
+            color: var(--text-secondary);
+            font-size: 0.8em;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .modal-content input, .modal-content select, .modal-content textarea {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 0.95em;
+            margin-bottom: 12px;
+        }
+        .modal-content input:focus, .modal-content select:focus, .modal-content textarea:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+        }
+        .modal-content textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+        .modal-content .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
+        .modal-buttons button {
+            padding: 10px 24px;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .modal-buttons .btn-guardar {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+        }
+        .modal-buttons .btn-cerrar {
+            background: var(--danger);
+            color: white;
+        }
+        .modal-buttons button:hover {
+            opacity: 0.8;
+        }
+        .historial-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9em;
+        }
+        .historial-item .fecha {
+            color: var(--text-muted);
+            font-size: 0.8em;
+        }
+        .historial-item .tipo {
+            font-weight: 600;
+        }
+        .historial-item .tipo.creacion { color: var(--success); }
+        .historial-item .tipo.actualizacion { color: var(--accent-blue); }
+        .historial-item .tipo.nota { color: var(--warning); }
+        .historial-item .tipo.venta { color: var(--accent-purple); }
+        .resumen-clientes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .resumen-clientes .item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            text-align: center;
+        }
+        .resumen-clientes .item .numero {
+            font-size: 1.6em;
+            font-weight: 700;
+        }
+        .resumen-clientes .item .label {
+            color: var(--text-muted);
+            font-size: 0.7em;
+        }
+        .resumen-clientes .item.total .numero { color: var(--accent-purple); }
+        .resumen-clientes .item.activos .numero { color: var(--success); }
+        .resumen-clientes .item.inactivos .numero { color: var(--danger); }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">LUMIRE <span>ERP</span></div>
+            <nav id="menuDinamico">
+                <!-- Menú cargado dinámicamente -->
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <h1><i class="fas fa-address-book" style="color: var(--accent-purple);"></i> Clientes</h1>
+                <button id="btnNuevoCliente" class="btn-primary" style="width: auto; padding: 10px 20px; background: var(--success);">
+                    <i class="fas fa-user-plus"></i> Nuevo Cliente
+                </button>
+            </div>
+
+            <!-- Resumen -->
+            <div class="resumen-clientes">
+                <div class="item total">
+                    <div class="numero" id="totalClientes">0</div>
+                    <div class="label">Total Clientes</div>
+                </div>
+                <div class="item activos">
+                    <div class="numero" id="clientesActivos">0</div>
+                    <div class="label">Activos</div>
+                </div>
+                <div class="item inactivos">
+                    <div class="numero" id="clientesInactivos">0</div>
+                    <div class="label">Inactivos</div>
+                </div>
+            </div>
+
+            <!-- Buscador -->
+            <div class="search-bar">
+                <input type="text" id="buscarCliente" placeholder="Buscar por nombre, email o teléfono..." onkeypress="if(event.key==='Enter') buscarClientes()">
+                <button class="btn-buscar" onclick="buscarClientes()">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+                <button class="btn-buscar" style="background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-color);" onclick="cargarClientes()">
+                    <i class="fas fa-sync"></i>
+                </button>
+            </div>
+
+            <!-- Lista de clientes -->
+            <div class="card" style="padding: 20px;">
+                <h3 style="font-size: 1em; margin-bottom: 16px; color: var(--text-secondary);">
+                    <i class="fas fa-list"></i> Lista de Clientes
+                </h3>
+                <div id="listaClientes">
+                    <div style="color: var(--text-muted);">Cargando clientes...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal: Nuevo/Editar Cliente -->
+    <div id="modalCliente" class="modal">
+        <div class="modal-content">
+            <h3 id="modalClienteTitulo">Nuevo Cliente</h3>
+            <input type="hidden" id="clienteId">
+            
+            <div class="grid-2">
+                <div>
+                    <label>Tipo</label>
+                    <select id="clienteTipo">
+                        <option value="persona">Persona</option>
+                        <option value="empresa">Empresa</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Documento</label>
+                    <input type="text" id="clienteDocumento" placeholder="CI, RUC, NIT...">
+                </div>
+            </div>
+
+            <label>Nombre</label>
+            <input type="text" id="clienteNombre" placeholder="Nombre completo o razón social">
+
+            <div class="grid-2">
+                <div>
+                    <label>Email</label>
+                    <input type="email" id="clienteEmail" placeholder="correo@ejemplo.com">
+                </div>
+                <div>
+                    <label>Teléfono</label>
+                    <input type="text" id="clienteTelefono" placeholder="+53 5XXX-XXXX">
+                </div>
+            </div>
+
+            <label>Dirección</label>
+            <input type="text" id="clienteDireccion" placeholder="Calle, número, colonia...">
+
+            <div class="grid-2">
+                <div>
+                    <label>Ciudad</label>
+                    <input type="text" id="clienteCiudad" placeholder="Ciudad">
+                </div>
+                <div>
+                    <label>País</label>
+                    <input type="text" id="clientePais" placeholder="País" value="Cuba">
+                </div>
+            </div>
+
+            <label>Notas</label>
+            <textarea id="clienteNotas" placeholder="Información adicional..."></textarea>
+
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                <input type="checkbox" id="clienteActivo" checked>
+                <label for="clienteActivo" style="margin: 0; cursor: pointer;">Cliente activo</label>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn-guardar" id="btnGuardarCliente">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+                <button class="btn-cerrar" id="btnCerrarModalCliente">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Historial -->
+    <div id="modalHistorial" class="modal">
+        <div class="modal-content">
+            <h3><i class="fas fa-history"></i> Historial del Cliente</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 12px;">
+                <strong id="historialClienteNombre"></strong>
+            </p>
+            <div id="historialContainer">
+                <div style="color: var(--text-muted);">Cargando historial...</div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cerrar" id="btnCerrarModalHistorial">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://lumire-erp-backend.onrender.com/api';
+        let token = localStorage.getItem('token');
+
+        // ============================================
+        // MENÚ DINÁMICO
+        // ============================================
+        async function cargarMenuDinamico() {
+            if (!token) {
+                window.location.href = 'index.html';
+                return;
+            }
+            try {
+                const res = await fetch(`${API_URL}/modulos/menu`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const menu = await res.json();
+                const nav = document.querySelector('nav');
+                if (!nav) return;
+                let html = '';
+                menu.forEach(item => {
+                    const active = window.location.pathname.includes(item.ruta) ? 'active' : '';
+                    html += `
+                        <a href="${item.ruta}" class="${active}">
+                            <i class="fas ${item.icono}"></i> ${item.nombre}
+                        </a>
+                    `;
+                });
+                html += `
+                    <a href="#" id="logoutBtn" class="logout">
+                        <i class="fas fa-sign-out-alt"></i> Salir
+                    </a>
+                `;
+                nav.innerHTML = html;
+                document.getElementById('logoutBtn')?.addEventListener('click', () => {
+                    localStorage.removeItem('token');
+                    window.location.href = 'index.html';
+                });
+            } catch (e) {
+                console.error('Error cargando menú:', e);
+            }
+        }
+
+        // ============================================
+        // CARGAR CLIENTES
+        // ============================================
+        async function cargarClientes() {
+            const container = document.getElementById('listaClientes');
+            container.innerHTML = '<div style="color: var(--text-muted);">Cargando clientes...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/clientes/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const clientes = await res.json();
+
+                // Actualizar resumen
+                const total = clientes.length;
+                const activos = clientes.filter(c => c.activo).length;
+                const inactivos = total - activos;
+                document.getElementById('totalClientes').textContent = total;
+                document.getElementById('clientesActivos').textContent = activos;
+                document.getElementById('clientesInactivos').textContent = inactivos;
+
+                if (!clientes || clientes.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted);">No hay clientes registrados</div>';
+                    return;
+                }
+
+                let html = '';
+                clientes.forEach(c => {
+                    const badge = c.activo ? 
+                        '<span class="badge-cliente activo">ACTIVO</span>' : 
+                        '<span class="badge-cliente inactivo">INACTIVO</span>';
+                    html += `
+                        <div class="cliente-card">
+                            <div class="info" onclick="verHistorial(${c.id})">
+                                <div class="nombre">${c.nombre || 'Sin nombre'}</div>
+                                <div class="detalles">
+                                    ${c.email ? `<span><i class="fas fa-envelope"></i> ${c.email}</span>` : ''}
+                                    ${c.telefono ? `<span><i class="fas fa-phone"></i> ${c.telefono}</span>` : ''}
+                                    ${c.documento ? `<span><i class="fas fa-id-card"></i> ${c.documento}</span>` : ''}
+                                    ${c.ciudad ? `<span><i class="fas fa-city"></i> ${c.ciudad}</span>` : ''}
+                                    ${badge}
+                                </div>
+                            </div>
+                            <div class="acciones">
+                                <button class="btn-historial" onclick="verHistorial(${c.id})">
+                                    <i class="fas fa-history"></i>
+                                </button>
+                                <button class="btn-editar-cliente" onclick="editarCliente(${JSON.stringify(c).replace(/'/g, "\\'")})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn-eliminar-cliente" onclick="eliminarCliente(${c.id}, '${c.nombre || ''}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = '<div style="color: var(--danger);">Error cargando clientes</div>';
+                console.error(e);
+            }
+        }
+
+        // ============================================
+        // BUSCAR CLIENTES
+        // ============================================
+        async function buscarClientes() {
+            const q = document.getElementById('buscarCliente').value.trim();
+            const container = document.getElementById('listaClientes');
+
+            if (!q || q.length < 2) {
+                cargarClientes();
+                return;
+            }
+
+            container.innerHTML = '<div style="color: var(--text-muted);">Buscando...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/clientes/buscar?q=${encodeURIComponent(q)}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const clientes = await res.json();
+
+                if (!clientes || clientes.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted);">No se encontraron clientes</div>';
+                    return;
+                }
+
+                let html = '';
+                clientes.forEach(c => {
+                    html += `
+                        <div class="cliente-card">
+                            <div class="info">
+                                <div class="nombre">${c.nombre || 'Sin nombre'}</div>
+                                <div class="detalles">
+                                    ${c.email ? `<span><i class="fas fa-envelope"></i> ${c.email}</span>` : ''}
+                                    ${c.telefono ? `<span><i class="fas fa-phone"></i> ${c.telefono}</span>` : ''}
+                                    ${c.ciudad ? `<span><i class="fas fa-city"></i> ${c.ciudad}</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="acciones">
+                                <button class="btn-historial" onclick="verHistorial(${c.id})">
+                                    <i class="fas fa-history"></i>
+                                </button>
+                                <button class="btn-editar-cliente" onclick="editarCliente(${JSON.stringify(c).replace(/'/g, "\\'")})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = '<div style="color: var(--danger);">Error en la búsqueda</div>';
+                console.error(e);
+            }
+        }
+
+        // ============================================
+        // NUEVO CLIENTE
+        // ============================================
+        function nuevoCliente() {
+            document.getElementById('modalClienteTitulo').textContent = 'Nuevo Cliente';
+            document.getElementById('clienteId').value = '';
+            document.getElementById('clienteTipo').value = 'persona';
+            document.getElementById('clienteDocumento').value = '';
+            document.getElementById('clienteNombre').value = '';
+            document.getElementById('clienteEmail').value = '';
+            document.getElementById('clienteTelefono').value = '';
+            document.getElementById('clienteDireccion').value = '';
+            document.getElementById('clienteCiudad').value = '';
+            document.getElementById('clientePais').value = 'Cuba';
+            document.getElementById('clienteNotas').value = '';
+            document.getElementById('clienteActivo').checked = true;
+            document.getElementById('modalCliente').classList.add('active');
+            document.getElementById('clienteNombre').focus();
+        }
+
+        // ============================================
+        // EDITAR CLIENTE
+        // ============================================
+        function editarCliente(cliente) {
+            document.getElementById('modalClienteTitulo').textContent = 'Editar Cliente';
+            document.getElementById('clienteId').value = cliente.id;
+            document.getElementById('clienteTipo').value = cliente.tipo || 'persona';
+            document.getElementById('clienteDocumento').value = cliente.documento || '';
+            document.getElementById('clienteNombre').value = cliente.nombre || '';
+            document.getElementById('clienteEmail').value = cliente.email || '';
+            document.getElementById('clienteTelefono').value = cliente.telefono || '';
+            document.getElementById('clienteDireccion').value = cliente.direccion || '';
+            document.getElementById('clienteCiudad').value = cliente.ciudad || '';
+            document.getElementById('clientePais').value = cliente.pais || 'Cuba';
+            document.getElementById('clienteNotas').value = cliente.notas || '';
+            document.getElementById('clienteActivo').checked = cliente.activo !== false;
+            document.getElementById('modalCliente').classList.add('active');
+            document.getElementById('clienteNombre').focus();
+        }
+
+        // ============================================
+        // GUARDAR CLIENTE
+        // ============================================
+        async function guardarCliente() {
+            const id = document.getElementById('clienteId').value;
+            const data = {
+                tipo: document.getElementById('clienteTipo').value,
+                documento: document.getElementById('clienteDocumento').value,
+                nombre: document.getElementById('clienteNombre').value,
+                email: document.getElementById('clienteEmail').value,
+                telefono: document.getElementById('clienteTelefono').value,
+                direccion: document.getElementById('clienteDireccion').value,
+                ciudad: document.getElementById('clienteCiudad').value,
+                pais: document.getElementById('clientePais').value || 'Cuba',
+                notas: document.getElementById('clienteNotas').value,
+                activo: document.getElementById('clienteActivo').checked
+            };
+
+            if (!data.nombre) {
+                alert('El nombre es obligatorio');
+                document.getElementById('clienteNombre').focus();
+                return;
+            }
+
+            const url = id ? `${API_URL}/clientes/${id}` : `${API_URL}/clientes/`;
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    alert(id ? 'Cliente actualizado ✅' : 'Cliente creado ✅');
+                    document.getElementById('modalCliente').classList.remove('active');
+                    cargarClientes();
+                } else {
+                    const error = await res.json();
+                    alert('Error: ' + JSON.stringify(error));
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        }
+
+        // ============================================
+        // ELIMINAR CLIENTE
+        // ============================================
+        async function eliminarCliente(id, nombre) {
+            if (!confirm(`¿Desactivar a "${nombre}"?`)) return;
+            try {
+                const res = await fetch(`${API_URL}/clientes/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    alert('Cliente desactivado');
+                    cargarClientes();
+                } else {
+                    alert('Error al desactivar');
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        }
+
+        // ============================================
+        // VER HISTORIAL
+        // ============================================
+        async function verHistorial(id) {
+            document.getElementById('modalHistorial').classList.add('active');
+            const container = document.getElementById('historialContainer');
+            container.innerHTML = '<div style="color: var(--text-muted);">Cargando historial...</div>';
+
+            try {
+                // Obtener datos del cliente
+                const resCliente = await fetch(`${API_URL}/clientes/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const cliente = await resCliente.json();
+                document.getElementById('historialClienteNombre').textContent = cliente.nombre || 'Cliente';
+
+                // Obtener historial
+                const resHistorial = await fetch(`${API_URL}/clientes/${id}/historial`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await resHistorial.json();
+
+                let html = '';
+
+                // Ventas
+                if (data.ventas && data.ventas.length > 0) {
+                    html += `<h4 style="color: var(--text-secondary); margin: 12px 0 8px 0;">🛒 Ventas</h4>`;
+                    data.ventas.forEach(v => {
+                        html += `
+                            <div class="historial-item">
+                                <div>
+                                    <span class="tipo venta">Venta #${v.id}</span>
+                                    <span style="color: var(--text-muted); font-size: 0.8em;">${v.cliente_nombre}</span>
+                                </div>
+                                <div>
+                                    <span style="color: var(--accent-cyan); font-weight: 600;">$${v.total}</span>
+                                    <span class="fecha">${new Date(v.fecha).toLocaleDateString()}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                // Historial general
+                if (data.historial && data.historial.length > 0) {
+                    html += `<h4 style="color: var(--text-secondary); margin: 12px 0 8px 0;">📋 Registros</h4>`;
+                    data.historial.forEach(h => {
+                        const tipoClass = h.tipo || 'nota';
+                        html += `
+                            <div class="historial-item">
+                                <div>
+                                    <span class="tipo ${tipoClass}">${h.tipo || 'Nota'}</span>
+                                    <span style="color: var(--text-muted); font-size: 0.85em;">${h.descripcion || ''}</span>
+                                </div>
+                                <span class="fecha">${new Date(h.fecha).toLocaleString()}</span>
+                            </div>
+                        `;
+                    });
+                }
+
+                if (!html) {
+                    html = '<div style="color: var(--text-muted);">No hay historial registrado</div>';
+                }
+
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = '<div style="color: var(--danger);">Error cargando historial</div>';
+                console.error(e);
+            }
+        }
+
+        // ============================================
+        // EVENTOS
+        // ============================================
+        document.getElementById('btnNuevoCliente')?.addEventListener('click', nuevoCliente);
+        document.getElementById('btnCerrarModalCliente')?.addEventListener('click', () => {
+            document.getElementById('modalCliente').classList.remove('active');
+        });
+        document.getElementById('btnGuardarCliente')?.addEventListener('click', guardarCliente);
+        document.getElementById('btnCerrarModalHistorial')?.addEventListener('click', () => {
+            document.getElementById('modalHistorial').classList.remove('active');
+        });
+
+        // Cerrar modales al hacer clic fuera
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.remove('active');
+            });
+        });
+
+        // ============================================
+        // INICIAR
+        // ============================================
+        async function init() {
+            if (!token) {
+                window.location.href = 'index.html';
+                return;
+            }
+            await cargarMenuDinamico();
+            await cargarClientes();
+        }
+
+        init();
+    </script>
+</body>
+</html>
